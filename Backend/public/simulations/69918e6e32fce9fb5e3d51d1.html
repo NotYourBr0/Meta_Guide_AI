@@ -1,0 +1,415 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Programming Simulator</title>
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+
+        main {
+            display: flex;
+            flex: 1;
+            gap: 1rem;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .controls {
+            flex: 0 0 350px;
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .visualizer {
+            flex: 1;
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--secondary);
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.25rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span { font-family: monospace; font-weight: bold; color: var(--primary); }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        .stats {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .stat-line { margin-bottom: 0.25rem; }
+        .highlight { color: var(--accent); font-weight: bold; }
+
+        .legend {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.9);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid #ddd;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2px; }
+        .box { width: 12px; height: 12px; border-radius: 2px; }
+
+        @media (max-width: 900px) {
+            main { flex-direction: column; overflow: auto; }
+            .controls { flex: none; }
+            .visualizer { min-height: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Linear Programming: Geometric Simplex Solver</h1>
+</header>
+
+<main>
+    <div class="controls">
+        <div class="control-group">
+            <div class="section-title">Objective: Maximize Z = c₁x + c₂y</div>
+            <label>c₁ coefficient: <span id="val-c1">3</span></label>
+            <input type="range" id="c1" min="-10" max="10" step="0.5" value="3">
+            <label>c₂ coefficient: <span id="val-c2">2</span></label>
+            <input type="range" id="c2" min="-10" max="10" step="0.5" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="section-title">Constraints (a₁x + a₂y ≤ b)</div>
+            
+            <div style="border-left: 3px solid #ef4444; padding-left: 10px; margin-bottom: 10px;">
+                <label>C1: x-coeff (a₁): <span id="val-a11">1</span></label>
+                <input type="range" id="a11" min="-5" max="10" step="0.5" value="1">
+                <label>C1: y-coeff (a₂): <span id="val-a12">2</span></label>
+                <input type="range" id="a12" min="-5" max="10" step="0.5" value="2">
+                <label>C1: Limit (b₁): <span id="val-b1">20</span></label>
+                <input type="range" id="b1" min="0" max="50" step="1" value="20">
+            </div>
+
+            <div style="border-left: 3px solid #f59e0b; padding-left: 10px;">
+                <label>C2: x-coeff (a₁): <span id="val-a21">2</span></label>
+                <input type="range" id="a21" min="-5" max="10" step="0.5" value="2">
+                <label>C2: y-coeff (a₂): <span id="val-a22">1</span></label>
+                <input type="range" id="a22" min="-5" max="10" step="0.5" value="1">
+                <label>C2: Limit (b₂): <span id="val-b2">20</span></label>
+                <input type="range" id="b2" min="0" max="50" step="1" value="20">
+            </div>
+        </div>
+
+        <div class="stats" id="simplex-output">
+            <div class="section-title" style="border:none">Optimization Result</div>
+            <div class="stat-line">Optimal Point: <span class="highlight" id="opt-pnt">(0, 0)</span></div>
+            <div class="stat-line">Max Z value: <span class="highlight" id="opt-z">0.00</span></div>
+            <div class="stat-line" style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
+                Status: <span id="opt-status">Optimal</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="visualizer">
+        <div class="legend">
+            <div class="legend-item"><div class="box" style="background:rgba(16, 185, 129, 0.3)"></div> Feasible Region</div>
+            <div class="legend-item"><div class="box" style="background:#ef4444"></div> Constraint 1</div>
+            <div class="legend-item"><div class="box" style="background:#f59e0b"></div> Constraint 2</div>
+            <div class="legend-item"><div class="box" style="background:#2563eb"></div> Objective Vector</div>
+        </div>
+        <canvas id="canvas"></canvas>
+    </div>
+</main>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const inputs = ['c1', 'c2', 'a11', 'a12', 'b1', 'a21', 'a22', 'b2'];
+    
+    let params = {};
+    const scale = 15;
+    const margin = 50;
+
+    function init() {
+        window.addEventListener('resize', resize);
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', (e) => {
+                document.getElementById('val-' + id).innerText = e.target.value;
+                update();
+            });
+        });
+        resize();
+    }
+
+    function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        update();
+    }
+
+    function getIntersections() {
+        const lines = [
+            { a: params.a11, b: params.a12, c: params.b1 }, // C1
+            { a: params.a21, b: params.a22, c: params.b2 }, // C2
+            { a: 1, b: 0, c: 0 }, // x = 0
+            { a: 0, b: 1, c: 0 }, // y = 0
+            { a: 1, b: 0, c: 100 }, // Bound X
+            { a: 0, b: 1, c: 100 }  // Bound Y
+        ];
+
+        let points = [];
+        for (let i = 0; i < lines.length; i++) {
+            for (let j = i + 1; j < lines.length; j++) {
+                const l1 = lines[i];
+                const l2 = lines[j];
+                const det = l1.a * l2.b - l1.b * l2.a;
+                
+                if (Math.abs(det) > 1e-6) {
+                    const x = (l2.b * l1.c - l1.b * l2.c) / det;
+                    const y = (l1.a * l2.c - l2.a * l1.c) / det;
+                    
+                    // Check if point is feasible
+                    if (isFeasible(x, y)) {
+                        points.push({ x, y });
+                    }
+                }
+            }
+        }
+        return points;
+    }
+
+    function isFeasible(x, y) {
+        const eps = 1e-6;
+        if (x < -eps || y < -eps) return false;
+        if (params.a11 * x + params.a12 * y > params.b1 + eps) return false;
+        if (params.a21 * x + params.a22 * y > params.b2 + eps) return false;
+        return true;
+    }
+
+    function update() {
+        inputs.forEach(id => {
+            params[id] = parseFloat(document.getElementById(id).value);
+        });
+
+        const points = getIntersections();
+        
+        // Sort points to form a convex hull polygon for drawing
+        let center = points.reduce((acc, p) => ({ x: acc.x + p.x/points.length, y: acc.y + p.y/points.length }), { x: 0, y: 0 });
+        points.sort((a, b) => Math.atan2(a.y - center.y, a.x - center.x) - Math.atan2(b.y - center.y, b.x - center.x));
+
+        // Solve optimization
+        let maxZ = -Infinity;
+        let bestP = { x: 0, y: 0 };
+        
+        points.forEach(p => {
+            const z = params.c1 * p.x + params.c2 * p.y;
+            if (z > maxZ) {
+                maxZ = z;
+                bestP = p;
+            }
+        });
+
+        // Update UI
+        if (points.length === 0) {
+            document.getElementById('opt-status').innerText = "Infeasible";
+            document.getElementById('opt-status').style.color = "var(--danger)";
+            document.getElementById('opt-pnt').innerText = "N/A";
+            document.getElementById('opt-z').innerText = "N/A";
+        } else if (maxZ > 1000) {
+            document.getElementById('opt-status').innerText = "Unbounded";
+            document.getElementById('opt-status').style.color = "var(--danger)";
+        } else {
+            document.getElementById('opt-status').innerText = "Optimal Found";
+            document.getElementById('opt-status').style.color = "var(--accent)";
+            document.getElementById('opt-pnt').innerText = `(${bestP.x.toFixed(2)}, ${bestP.y.toFixed(2)})`;
+            document.getElementById('opt-z').innerText = maxZ.toFixed(2);
+        }
+
+        draw(points, bestP);
+    }
+
+    function toCanvas(x, y) {
+        // Simple mapping: 0-50 units to canvas space
+        const w = canvas.width - 2 * margin;
+        const h = canvas.height - 2 * margin;
+        const unit = Math.min(w, h) / 40;
+        return {
+            x: margin + x * unit,
+            y: canvas.height - margin - y * unit
+        };
+    }
+
+    function draw(polyPoints, optimal) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Grid
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for(let i=0; i<=50; i+=5) {
+            let p1 = toCanvas(i, 0);
+            let p2 = toCanvas(i, 40);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            
+            p1 = toCanvas(0, i);
+            p2 = toCanvas(40, i);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        const origin = toCanvas(0,0);
+        const top = toCanvas(0, 40);
+        const right = toCanvas(40, 0);
+        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(top.x, top.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(right.x, right.y); ctx.stroke();
+
+        // Feasible Region
+        if (polyPoints.length > 0) {
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+            ctx.beginPath();
+            const p0 = toCanvas(polyPoints[0].x, polyPoints[0].y);
+            ctx.moveTo(p0.x, p0.y);
+            for(let i=1; i<polyPoints.length; i++) {
+                const p = toCanvas(polyPoints[i].x, polyPoints[i].y);
+                ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+            ctx.stroke();
+        }
+
+        // Constraint Lines
+        drawConstraint(params.a11, params.a12, params.b1, '#ef4444');
+        drawConstraint(params.a21, params.a22, params.b2, '#f59e0b');
+
+        // Objective Vector Direction
+        const objEnd = toCanvas(params.c1 * 2, params.c2 * 2);
+        const objStart = toCanvas(0,0);
+        ctx.strokeStyle = '#2563eb';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(objStart.x, objStart.y);
+        ctx.lineTo(objEnd.x, objEnd.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Optimal Point
+        if(polyPoints.length > 0) {
+            const opt = toCanvas(optimal.x, optimal.y);
+            ctx.fillStyle = '#2563eb';
+            ctx.beginPath();
+            ctx.arc(opt.x, opt.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    function drawConstraint(a, b, c, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        let points = [];
+
+        // Intersections with bounding box (0,0) to (40,40)
+        // ax + by = c
+        if (Math.abs(b) > 0.01) { // x=0 intersection
+            points.push({x: 0, y: c/b});
+            points.push({x: 40, y: (c - a*40)/b});
+        }
+        if (Math.abs(a) > 0.01) { // y=0 intersection
+            points.push({x: c/a, y: 0});
+            points.push({x: (c - b*40)/a, y: 40});
+        }
+
+        const validPoints = points.filter(p => p.x >= -0.1 && p.x <= 40.1 && p.y >= -0.1 && p.y <= 40.1);
+        if (validPoints.length >= 2) {
+            const p1 = toCanvas(validPoints[0].x, validPoints[0].y);
+            const p2 = toCanvas(validPoints[1].x, validPoints[1].y);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
+```

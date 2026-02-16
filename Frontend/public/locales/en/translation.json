@@ -1,0 +1,40 @@
+{
+    "navbar": {
+        "profile": "Profile",
+        "logout": "Logout",
+        "login": "Login",
+        "signup": "Sign Up"
+    },
+    "sidebar": {
+        "home": "Home",
+        "subjects": "Subjects"
+    },
+    "home": {
+        "welcome": "Welcome, {{name}}",
+        "welcomeBack": "Welcome back, {{name}}!",
+        "tagline": "Learn complex topics with AI-powered explanations and interactive simulations",
+        "taglineAuth": "Continue your learning journey with AI-powered explanations and simulations",
+        "quickActions": "Quick Actions",
+        "browseSubjects": "Browse Subjects",
+        "subjectsDesc": "Explore subjects across different levels",
+        "yourProfile": "Your Profile",
+        "profileDesc": "View and manage your account",
+        "adminDashboard": "Admin Dashboard",
+        "adminDesc": "Manage users, subjects, and topics",
+        "features": "Features",
+        "getStarted": "Get Started Today",
+        "ctaDesc": "Join thousands of learners using AI to master complex topics",
+        "whyChoose": "Why Choose MetaGuide AI?"
+    },
+    "profile": {
+        "title": "Your Profile",
+        "email": "Email",
+        "role": "Role",
+        "accountType": "Account Type",
+        "memberSince": "Member since",
+        "notLoggedIn": "Please log in to view your profile"
+    },
+    "common": {
+        "loading": "Loading..."
+    }
+}

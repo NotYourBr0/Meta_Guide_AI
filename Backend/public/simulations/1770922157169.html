@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>new</title>
+<style>
+body { font-family: Arial; text-align:center; }
+input { margin:10px; }
+canvas { border:1px solid black; }
+</style>
+</head>
+<body>
+<h3>new Simulation</h3>
+<label>Value:
+<input type="range" id="val" min="1" max="10" value="5">
+</label>
+<p id="output">5</p>
+<script>
+const slider = document.getElementById("val")
+const output = document.getElementById("output")
+slider.addEventListener("input", () => {
+  output.innerText = slider.value
+})
+</script>
+</body>
+</html>

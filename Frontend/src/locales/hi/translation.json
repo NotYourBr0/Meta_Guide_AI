@@ -1,0 +1,12 @@
+{
+  "navbar": {
+    "profile": "प्रोफ़ाइल"
+  },
+  "sidebar": {
+    "home": "होम",
+    "subjects": "विषय"
+  },
+  "home": {
+    "welcome": "स्वागत है, {{name}}"
+  }
+}

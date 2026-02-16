@@ -1,0 +1,12 @@
+{
+  "navbar": {
+    "profile": "Profile"
+  },
+  "sidebar": {
+    "home": "Home",
+    "subjects": "Subjects"
+  },
+  "home": {
+    "welcome": "Welcome, {{name}}"
+  }
+}

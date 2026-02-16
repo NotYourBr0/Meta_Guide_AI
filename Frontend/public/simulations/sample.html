@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sample Simulation</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+input {
+  margin: 10px;
+}
+canvas {
+  border: 1px solid black;
+}
+</style>
+</head>
+<body>
+
+<h3>Simple Ball Simulation</h3>
+
+<label>Speed:
+<input type="range" id="speed" min="1" max="10" value="5">
+</label>
+
+<canvas id="canvas" width="400" height="200"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+const speedInput = document.getElementById("speed")
+
+let x = 0
+let speed = 5
+
+speedInput.addEventListener("input", () => {
+  speed = parseInt(speedInput.value)
+})
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.beginPath()
+  ctx.arc(x, 100, 10, 0, Math.PI * 2)
+  ctx.fill()
+  x += speed
+  if (x > canvas.width) x = 0
+  requestAnimationFrame(animate)
+}
+
+animate()
+</script>
+
+</body>
+</html>
