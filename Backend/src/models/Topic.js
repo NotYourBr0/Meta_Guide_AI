@@ -19,6 +19,10 @@ const topicSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  hindiExplanation: {
+    type: String,
+    default: ""
+  },
   simulationPath: {
     type: String,
     default: ""

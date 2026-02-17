@@ -13,6 +13,8 @@ const TopicDetail = () => {
   
   const [topic, setTopic] = useState(null)
   const [explanation, setExplanation] = useState("")
+  const [hindiExplanation, setHindiExplanation] = useState("")
+  const [currentLanguage, setCurrentLanguage] = useState("en")
   const [explanationLoading, setExplanationLoading] = useState(false)
   const [explanationError, setExplanationError] = useState(null)
 
@@ -27,6 +29,7 @@ const TopicDetail = () => {
         const data = await res.json()
         setTopic(data)
         setExplanation(data.explanation || "")
+        setHindiExplanation(data.hindiExplanation || "")
         setSimulationPath(data.simulationPath ? import.meta.env.VITE_API_BASE_URL + data.simulationPath : "")
       } catch (err) {
         console.error("Error fetching topic:", err)
@@ -75,6 +78,7 @@ const TopicDetail = () => {
     try {
       const result = await generateExplanation(topic._id, i18n.language)
       setExplanation(result.explanation)
+      setHindiExplanation(result.hindiExplanation || "")
     } catch (err) {
       setExplanationError(err.message || "Failed to generate explanation")
       console.error("Error generating explanation:", err)
@@ -114,7 +118,33 @@ const TopicDetail = () => {
 
      <div className="mb-10 leading-7">
   <div className="flex justify-between items-center mb-3">
-    <h2 className="text-xl">Explanation</h2>
+    <div className="flex items-center gap-3">
+      <h2 className="text-xl">Explanation</h2>
+      {explanation && hindiExplanation && (
+        <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <button
+            onClick={() => setCurrentLanguage("en")}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
+              currentLanguage === "en" 
+                ? "bg-primary text-white shadow-sm" 
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }`}
+          >
+            English
+          </button>
+          <button
+            onClick={() => setCurrentLanguage("hi")}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${
+              currentLanguage === "hi" 
+                ? "bg-primary text-white shadow-sm" 
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }`}
+          >
+            हिंदी
+          </button>
+        </div>
+      )}
+    </div>
     {!explanation && (
       <button
         onClick={createExplanation}
@@ -134,7 +164,9 @@ const TopicDetail = () => {
 
   {explanation && (
     <div className="prose dark:prose-invert max-w-none">
-      <ReactMarkdown>{explanation}</ReactMarkdown>
+      <ReactMarkdown>
+        {currentLanguage === "en" ? explanation : (hindiExplanation || explanation)}
+      </ReactMarkdown>
     </div>
   )}
 </div>

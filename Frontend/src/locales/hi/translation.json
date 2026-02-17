@@ -8,5 +8,15 @@
   },
   "home": {
     "welcome": "स्वागत है, {{name}}"
+  },
+  "topic": {
+    "explanation": "व्याख्या",
+    "generateExplanation": "व्याख्या उत्पन्न करें",
+    "generating": "उत्पन्न हो रहा है...",
+    "english": "अंग्रेज़ी",
+    "hindi": "हिंदी",
+    "simulation": "सिमुलेशन",
+    "generateSimulation": "सिमुलेशन उत्पन्न करें",
+    "fullscreen": "पूर्ण स्क्रीन"
   }
 }

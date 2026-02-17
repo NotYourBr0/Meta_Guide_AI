@@ -5,29 +5,114 @@ export const generateSimulationFromAI = async ({
   explanation
 }) => {
 
-  const prompt = `
-Create a complete simulation in a single HTML file.
+  const prompt = `Create a complete, interactive simulation in a single HTML file.
 
 Topic: ${topicName}
 
-Explanation:
+Reference Explanation:
 ${explanation}
 
-Rules:
-- Return ONLY full HTML.
-- Include internal <style> and <script>.
-- No external CDN.
-- No imports.
-- No frameworks.
-- No network calls.
-- Must be responsive.
-- Must include interactive sliders.
-- Parameters must update live.
-- Lightweight and optimized.
-- Clean UI.
-- No unnecessary HTML tags.
-- Only simulation and parameters tweaker, nothing else.
-`
+OUTPUT RULES:
+
+Return ONLY valid, complete HTML.
+
+Do NOT add explanations, comments, or markdown.
+
+Do NOT wrap output in code blocks.
+
+Start directly with <!DOCTYPE html>.
+
+End with </html>.
+
+TECHNICAL RULES:
+
+Use only internal <style> and <script>.
+
+No external CDN.
+
+No imports.
+
+No frameworks.
+
+No network requests.
+
+No APIs.
+
+No fonts or assets from outside.
+
+UI & RESPONSIVENESS:
+
+Must work on mobile, tablet, and desktop.
+
+Use flexible layout (Flexbox or Grid).
+
+Adapt to screen size automatically.
+
+No horizontal scrolling.
+
+INTERACTIVITY:
+
+Include multiple sliders for key parameters.
+
+All parameters update in real time.
+
+Changes reflect instantly in the simulation.
+
+No refresh or reload.
+
+PERFORMANCE:
+
+Keep JavaScript lightweight.
+
+Optimize rendering loops.
+
+Avoid unnecessary reflows.
+
+Use requestAnimationFrame where needed.
+
+DESIGN:
+
+Clean and minimal interface.
+
+High contrast for readability.
+
+Consistent spacing.
+
+No decorative clutter.
+
+CONTENT RULES:
+
+Include ONLY:
+
+The simulation area
+
+The parameter controls
+
+No headers, no descriptions, no credits.
+
+No footer.
+
+No placeholder text.
+
+STRUCTURE REQUIREMENT:
+
+One main container
+
+One canvas or visualization area
+
+One control panel
+
+VALIDATION:
+
+Output must run offline.
+
+Output must pass basic HTML validation.
+
+No unused variables.
+
+No dead code.
+
+Follow all rules strictly.`
 
   const apiKey = process.env.SIMULATION_API_KEY
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`

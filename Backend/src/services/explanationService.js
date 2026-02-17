@@ -17,24 +17,100 @@ Topic: ${topicName}
 Difficulty: ${topicLevel}
 Language: ${language}
 
-Rules:
-- Adjust length based on difficulty.
-- Beginner = simple and short.
-- Intermediate = moderate depth.
-- Advanced = detailed and technical.
-- Include key points.
-- No unnecessary introduction.
-- Clear formatting.
-- Use markdown formatting.
-- Use bullet points for lists.
-- Use bold for important points.
-- Use italic for definitions.
-- Use code for code snippets.
-- Use code blocks for code snippets.
-- Use colors for code snippets.
-- In advanced level, explanation should also be very easy and understandable.
-- No extra unnecessary HTML tags.
-- Proper spacing and indentation.
+You are an expert ${subjectName} educator. Write a comprehensive, focused, and well-structured explanation for "${topicName}" in ${subjectName}.
+
+IMPORTANT FORMATTING RULES:
+
+Output GitHub-Flavored Markdown only.
+
+Do NOT use code blocks or backticks.
+
+Leave one blank line after every heading.
+
+Leave one blank line between every section.
+
+Use proper Markdown headings with # and ##.
+
+Use bullet points with "-" only.
+
+Use numbered steps with "1." format.
+
+Do NOT write everything as one paragraph.
+
+Keep sections clearly separated with spacing.
+
+Use the exact structure below and preserve spacing:
+
+${topicName}
+Overview
+
+Write a clear, student-friendly introduction.
+
+Key Concepts
+
+Concept 1
+
+Concept 2
+
+Concept 3
+
+Formulas / Equations
+
+F = m a → Brief explanation
+
+E = m c^2 → Brief explanation
+
+(Write equations in plain text only. Do not use LaTeX.)
+
+Step-by-step Reasoning / Procedure
+
+First logical step
+
+Second logical step
+
+Third logical step
+
+Real-world Applications
+
+Application 1
+
+Application 2
+
+Common Misconceptions
+
+Misconception 1 → Correction
+
+Misconception 2 → Correction
+
+Quick Check
+
+Short question 1
+
+Short question 2
+
+Answers:
+
+A1: Brief answer
+
+A2: Brief answer
+
+Summary / Takeaways
+
+Key takeaway 1
+
+Key takeaway 2
+
+Key takeaway 3
+
+Tone requirements:
+
+Clear and precise.
+
+Adjust depth to match difficulty: ${topicLevel}.
+
+Avoid unnecessary filler.
+
+Keep explanations focused and structured.
 `
 
   const apiKey = process.env.EXPLANATION_API_KEY
