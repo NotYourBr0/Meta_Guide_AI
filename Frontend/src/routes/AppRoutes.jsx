@@ -7,6 +7,7 @@ import Profile from "../pages/Profile"
 import Login from "../pages/Login"
 import Signup from "../pages/Signup"
 import AdminDashboard from "../pages/AdminDashboard"
+import Tests from "../pages/Tests"
 import PrivateRoute from "../components/PrivateRoute"
 
 const AppRoutes = () => {
@@ -18,6 +19,7 @@ const AppRoutes = () => {
       <Route path="/subjects" element={<Subjects />} />
       <Route path="/subjects/:id" element={<Topics />} />
       <Route path="/topics/:id" element={<TopicDetail />} />
+      <Route path="/tests" element={<Tests />} />
       
       {/* Protected Routes */}
       <Route element={<PrivateRoute />}>

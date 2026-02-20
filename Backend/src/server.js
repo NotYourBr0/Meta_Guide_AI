@@ -10,6 +10,8 @@ import topicRoutes from "./routes/topicRoutes.js"
 import { fileURLToPath } from "url"
 import explanationRoutes from "./routes/explanationRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
+import testRoutes from "./routes/testRoutes.js"
+import assistantRoutes from "./routes/assistantRoutes.js"
 
 
 dotenv.config()
@@ -35,6 +37,8 @@ app.use("/api/topics", topicRoutes)
 app.use("/api/explanation", explanationRoutes)
 app.use("/api/auth", authRoutes)
 app.use("/api/admin", adminRoutes)
+app.use("/api/tests", testRoutes)
+app.use("/api/assistant", assistantRoutes)
 
 
 // Test route

@@ -7,7 +7,64 @@
     },
     "sidebar": {
         "home": "Home",
-        "subjects": "Subjects"
+        "subjects": "Subjects",
+        "tests": "Tests"
+    },
+    "subjects": {
+        "loading": "Loading...",
+        "addSubject": "Add Subject",
+        "searchPlaceholder": "Search by name or creator",
+        "unknown": "Unknown",
+        "errorCreate": "Failed to create subject",
+        "levels": {
+            "all": "All Levels",
+            "school": "School",
+            "university": "University"
+        }
+    },
+    "topics": {
+        "loading": "Loading...",
+        "addTopic": "Add Topic",
+        "searchPlaceholder": "Search by name or creator",
+        "errorCreate": "Failed to create topic"
+    },
+    "tests": {
+        "header": {
+            "title": "Tests",
+            "subtitle": "AI-generated quizzes for every topic. Click a topic to start a new test."
+        },
+        "search": {
+            "placeholder": "Search by topic, subject, or creator...",
+            "levels": {
+                "all": "All Levels",
+                "beginner": "Beginner",
+                "intermediate": "Intermediate",
+                "advanced": "Advanced"
+            }
+        },
+        "stats": {
+            "topics": "{{count}} topic",
+            "topics_plural": "{{count}} topics",
+            "attempted": "• {{count}} attempted"
+        },
+        "empty": {
+            "title": "No topics found",
+            "subtitle": "Try adjusting your search or filter"
+        },
+        "card": {
+            "ranks": "Ranks",
+            "bestScore": "Best Score",
+            "questions": "{{count}} questions",
+            "pts": "{{count}} pts",
+            "loginToStart": "Login to Start",
+            "generating": "Generating...",
+            "retry": "Retry →",
+            "start": "Start →",
+            "noExplanation": "⚠️ No explanation yet — test may be generic"
+        },
+        "loading": "Loading tests...",
+        "error": "Error: {{message}}",
+        "unknownCreator": "Unknown"
     },
     "home": {
         "welcome": "Welcome, {{name}}",
@@ -22,19 +79,66 @@
         "adminDashboard": "Admin Dashboard",
         "adminDesc": "Manage users, subjects, and topics",
         "features": "Features",
+        "feature1Title": "AI-Powered Explanations",
+        "feature1Desc": "Get detailed explanations tailored to your learning level",
+        "feature2Title": "Interactive Simulations",
+        "feature2Desc": "Learn by doing with AI-generated interactive simulations",
         "getStarted": "Get Started Today",
         "ctaDesc": "Join thousands of learners using AI to master complex topics",
-        "whyChoose": "Why Choose MetaGuide AI?"
+        "whyChoose": "Why Choose MetaGuide AI?",
+        "adaptiveTitle": "Adaptive Learning",
+        "adaptiveDesc": "Content adapts to your level - from school to university",
+        "instantTitle": "Instant Explanations",
+        "instantDesc": "Get AI-generated explanations in seconds",
+        "multiLangTitle": "Multi-Language",
+        "multiLangDesc": "Learn in your preferred language"
+    },
+    "topic": {
+        "explanation": "Explanation",
+        "generateExplanation": "Generate Explanation",
+        "generating": "Generating...",
+        "english": "English",
+        "hindi": "Hindi",
+        "simulation": "Simulation",
+        "generateSimulation": "Generate Simulation",
+        "fullscreen": "Fullscreen"
     },
     "profile": {
         "title": "Your Profile",
-        "email": "Email",
+        "notLoggedIn": "Please log in to view your profile",
         "role": "Role",
+        "superAdmin": "Super Admin",
+        "userRole": "User",
         "accountType": "Account Type",
+        "googleAccount": "Google Account",
+        "emailPassword": "Email & Password",
+        "email": "Email",
+        "userId": "User ID",
         "memberSince": "Member since",
-        "notLoggedIn": "Please log in to view your profile"
+        "mySubjects": "My Subjects",
+        "myTopics": "My Topics",
+        "noSubjects": "No subjects created yet.",
+        "noTopics": "No topics created yet.",
+        "editName": "Edit name",
+        "saveName": "Save",
+        "cancel": "Cancel",
+        "nameUpdated": "Name updated successfully!",
+        "nameError": "Failed to update name.",
+        "namePlaceholder": "Enter your name"
     },
-    "common": {
-        "loading": "Loading..."
+    "admin": {
+        "title": "Admin Dashboard",
+        "users": "Users",
+        "subjects": "Subjects",
+        "topics": "Topics",
+        "noUsers": "No users found.",
+        "noSubjects": "No subjects found.",
+        "noTopics": "No topics found.",
+        "subjectName": "Subject Name",
+        "topicName": "Topic Name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "edit": "Edit",
+        "delete": "Delete"
     }
 }

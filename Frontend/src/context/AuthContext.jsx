@@ -98,6 +98,20 @@ export const AuthProvider = ({ children }) => {
     googleLogout();
   };
 
+  // Update display name (cascades to subjects & topics via backend)
+  const updateName = async (newName) => {
+    try {
+      const res = await axios.put('/auth/update-name', { name: newName });
+      if (res.data.success) {
+        setUser(prev => ({ ...prev, name: res.data.name }));
+        return { success: true };
+      }
+      return { success: false, message: res.data.message };
+    } catch (err) {
+      return { success: false, message: err.response?.data?.message || 'Failed to update name' };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -106,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     login,
     googleLogin,
     logout,
+    updateName,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'superadmin',
   };

@@ -1,5 +1,6 @@
 import Navbar from "./Navbar"
 import Sidebar from "./Sidebar"
+import AIAssistant from "../ui/AIAssistant"
 
 const MainLayout = ({ children }) => {
   return (
@@ -11,8 +12,11 @@ const MainLayout = ({ children }) => {
           {children}
         </div>
       </div>
+      {/* AI Assistant floating widget — always visible */}
+      <AIAssistant />
     </div>
   )
 }
 
 export default MainLayout
+

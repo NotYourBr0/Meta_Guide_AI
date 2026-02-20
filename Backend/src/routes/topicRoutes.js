@@ -5,7 +5,7 @@ import { protect } from "../middleware/authMiddleware.js"
 const router = express.Router()
 
 router.get("/single/:id", async (req, res) => {
-  const topic = await Topic.findById(req.params.id)
+  const topic = await Topic.findById(req.params.id).populate('subjectId', 'name')
   res.json(topic)
 })
 

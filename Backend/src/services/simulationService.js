@@ -5,18 +5,24 @@ export const generateSimulationFromAI = async ({
   explanation
 }) => {
 
-  const prompt = `Create a complete, interactive simulation in a single HTML file.
+  const prompt = `Create a complete, highly interactive simulation in a single HTML file.
 
 Topic: ${topicName}
 
 Reference Explanation:
 ${explanation}
 
+The simulation MUST be designed strictly according to the given explanation.
+
+All variables, formulas, and behaviors must follow the reference explanation.
+
 OUTPUT RULES:
 
 Return ONLY valid, complete HTML.
 
-Do NOT add explanations, comments, or markdown.
+Do NOT add explanations outside the simulation.
+
+Do NOT add markdown.
 
 Do NOT wrap output in code blocks.
 
@@ -38,79 +44,119 @@ No network requests.
 
 No APIs.
 
-No fonts or assets from outside.
+No external fonts or assets.
 
-UI & RESPONSIVENESS:
+SCREEN & RESPONSIVENESS:
 
-Must work on mobile, tablet, and desktop.
+Optimize layout for laptops and desktops.
 
-Use flexible layout (Flexbox or Grid).
+Minimum width: 1000px.
 
-Adapt to screen size automatically.
+Not required to support mobile phones.
 
-No horizontal scrolling.
+Prevent layout collapse on small screens.
+
+Show a centered warning message on screens below 900px width.
+
+UI & LAYOUT:
+
+Use Flexbox or Grid.
+
+Fixed simulation panel.
+
+Dedicated control panel.
+
+Stable layout with no jumping.
 
 INTERACTIVITY:
 
-Include multiple sliders for key parameters.
+Include multiple sliders, toggles, and inputs.
 
 All parameters update in real time.
 
-Changes reflect instantly in the simulation.
+Visual feedback for every change.
 
-No refresh or reload.
+Smooth transitions.
+
+No page reload.
+
+EXPLANATION INSIDE SIMULATION:
+
+Include an integrated explanation panel.
+
+Show formulas and variable meanings.
+
+Highlight active values live.
+
+Sync explanations with user input.
+
+No external text outside the UI.
 
 PERFORMANCE:
 
-Keep JavaScript lightweight.
+Use requestAnimationFrame for animation.
 
-Optimize rendering loops.
+Avoid unnecessary DOM updates.
 
-Avoid unnecessary reflows.
+Optimize calculations.
 
-Use requestAnimationFrame where needed.
+Keep memory usage low.
 
 DESIGN:
 
-Clean and minimal interface.
+Clean, professional interface.
 
-High contrast for readability.
+High contrast.
+
+Readable typography.
 
 Consistent spacing.
 
-No decorative clutter.
+No visual clutter.
 
 CONTENT RULES:
 
 Include ONLY:
 
-The simulation area
+Simulation canvas/visual area
 
-The parameter controls
+Control panel
 
-No headers, no descriptions, no credits.
+Explanation panel
 
-No footer.
+No:
 
-No placeholder text.
+Headers
+
+Credits
+
+Footer
+
+Ads
+
+Placeholder text
 
 STRUCTURE REQUIREMENT:
 
 One main container
 
-One canvas or visualization area
+One visualization area
 
-One control panel
+One controls section
+
+One explanation section
 
 VALIDATION:
 
-Output must run offline.
+Must run fully offline.
 
-Output must pass basic HTML validation.
+Must pass HTML validation.
 
-No unused variables.
+No unused code.
 
-No dead code.
+No dead variables.
+
+No dead functions.
 
 Follow all rules strictly.`
 

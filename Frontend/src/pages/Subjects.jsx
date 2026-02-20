@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import { useTranslation } from "react-i18next"
 import AddSubjectModal from "../components/ui/AddSubjectModal"
 import { getSubjects, createSubject } from "../services/api"
 
 const Subjects = () => {
   const navigate = useNavigate()
-const { user } = useAuth()
+  const { user } = useAuth()
+  const { t } = useTranslation()
   const [subjects, setSubjects] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [filterLevel, setFilterLevel] = useState("all")
@@ -33,7 +35,7 @@ const { user } = useAuth()
       setSubjects(prev => [newSubject, ...prev])
       setShowModal(false)
     } catch (err) {
-      setError(err.message || "Failed to create subject")
+      setError(err.message || t("subjects.errorCreate"))
       console.error("Error creating subject:", err)
     } finally {
       setSubmitting(false)
@@ -53,7 +55,7 @@ const { user } = useAuth()
     })
   }, [subjects, filterLevel, search])
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return <div>{t("subjects.loading")}</div>
 
   return (
     <div>
@@ -67,10 +69,9 @@ const { user } = useAuth()
         <button
           onClick={() => setShowModal(true)}
           disabled={!user}
-
-className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 cursor-not-allowed"   }     `}
-          >
-          Add Subject
+          className={`px-4 py-2 rounded ${user ? "bg-primary text-white" : "bg-gray-400 cursor-not-allowed"}`}
+        >
+          {t("subjects.addSubject")}
         </button>
 
         <div className="flex gap-3">
@@ -79,14 +80,14 @@ className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 c
             onChange={(e) => setFilterLevel(e.target.value)}
             className="border p-2 dark:bg-gray-800"
           >
-            <option value="all">All Levels</option>
-            <option value="school">School</option>
-            <option value="university">University</option>
+            <option value="all">{t("subjects.levels.all")}</option>
+            <option value="school">{t("subjects.levels.school")}</option>
+            <option value="university">{t("subjects.levels.university")}</option>
           </select>
 
           <input
             type="text"
-            placeholder="Search by name or creator"
+            placeholder={t("subjects.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 dark:bg-gray-800"
@@ -104,7 +105,7 @@ className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 c
             className="border p-4 rounded hover:border-primary cursor-pointer"
           >
             <div className="text-sm text-accent mb-2">
-              {subject.createdBy?.name || "Unknown"}
+              {subject.createdBy?.name || t("subjects.unknown")}
             </div>
             <h3 className="text-lg">{subject.name}</h3>
             <p className="text-sm opacity-70 mt-1">

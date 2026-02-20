@@ -1,15 +1,131 @@
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router-dom"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAuth } from "../../context/AuthContext"
 import LanguageSwitcher from "../ui/LanguageSwitcher"
 import ThemeToggle from "../ui/ThemeToggle"
 
+/* ── Review Modal ─────────────────────────────────────────── */
+const ReviewModal = ({ onClose }) => {
+  const [status, setStatus] = useState('idle') // idle | sending | success | error
+  const formRef = useRef(null)
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setStatus('sending')
+    const data = new FormData(formRef.current)
+    try {
+      const res = await fetch('https://formspree.io/f/myzpbqla', {
+        method: 'POST',
+        body: data,
+        headers: { Accept: 'application/json' },
+      })
+      if (res.ok) {
+        setStatus('success')
+        formRef.current.reset()
+      } else {
+        setStatus('error')
+      }
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Gradient header */}
+        <div className="bg-gradient-to-r from-sky-500 to-violet-600 px-6 py-5">
+          <h2 className="text-xl font-bold text-white">✨ Leave a Review</h2>
+          <p className="text-sky-100 text-sm mt-0.5">We'd love to hear your thoughts!</p>
+        </div>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+          aria-label="Close"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div className="p-6">
+          {status === 'success' ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">Thank you! 🎉</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Your review has been sent successfully.</p>
+              <button
+                onClick={onClose}
+                className="mt-2 px-5 py-2 bg-gradient-to-r from-sky-500 to-violet-600 text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Your Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Your Message
+                </label>
+                <textarea
+                  name="message"
+                  required
+                  rows={4}
+                  placeholder="Share your experience..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 transition resize-none"
+                />
+              </div>
+              {status === 'error' && (
+                <p className="text-sm text-red-500">Something went wrong. Please try again.</p>
+              )}
+              <button
+                type="submit"
+                disabled={status === 'sending'}
+                className="w-full py-2.5 bg-gradient-to-r from-sky-500 to-violet-600 text-white rounded-xl font-semibold hover:opacity-90 disabled:opacity-60 transition-all"
+              >
+                {status === 'sending' ? 'Sending…' : 'Send Review'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Navbar ──────────────────────────────────────────────── */
 const Navbar = () => {
   const { t } = useTranslation()
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showReview, setShowReview] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -18,12 +134,24 @@ const Navbar = () => {
   }
 
   return (
+    <>
     <div className="flex justify-between items-center px-6 py-3 border-b dark:border-gray-700">
       <Link to="/" className="text-xl font-semibold text-primary">
         MetaGuide AI
       </Link>
 
       <div className="flex items-center gap-4">
+        {/* Review Button */}
+        <button
+          onClick={() => setShowReview(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-sky-400 text-sky-600 dark:text-sky-400 dark:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+          </svg>
+          Review
+        </button>
+
         <ThemeToggle />
         <LanguageSwitcher />
 
@@ -97,6 +225,10 @@ const Navbar = () => {
         )}
       </div>
     </div>
+
+    {/* Review Modal */}
+    {showReview && <ReviewModal onClose={() => setShowReview(false)} />}
+    </>
   )
 }
 

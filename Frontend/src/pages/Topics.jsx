@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import { useTranslation } from "react-i18next"
 import AddTopicModal from "../components/ui/AddTopicModal"
 import { getTopicsBySubject, createTopic } from "../services/api"
 
@@ -10,6 +11,7 @@ const Topics = () => {
   const navigate = useNavigate()
   const subject = location.state
   const { user } = useAuth()
+  const { t } = useTranslation()
   
   const [topics, setTopics] = useState([])
   const [showModal, setShowModal] = useState(false)
@@ -41,7 +43,7 @@ const Topics = () => {
       setTopics(prev => [newTopic, ...prev])
       setShowModal(false)
     } catch (err) {
-      setError(err.message || "Failed to create topic")
+      setError(err.message || t("topics.errorCreate"))
       console.error("Error creating topic:", err)
     } finally {
       setSubmitting(false)
@@ -61,7 +63,7 @@ const Topics = () => {
     })
   }, [topics, filterLevel, search])
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return <div>{t("topics.loading")}</div>
 
   return (
     <div>
@@ -77,10 +79,9 @@ const Topics = () => {
         <button
           onClick={() => setShowModal(true)}
           disabled={!user}
-
-className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 cursor-not-allowed"   }     `}
-          >
-          Add Topic
+          className={`px-4 py-2 rounded ${user ? "bg-primary text-white" : "bg-gray-400 cursor-not-allowed"}`}
+        >
+          {t("topics.addTopic")}
         </button>
 
         <div className="flex gap-3">
@@ -89,15 +90,15 @@ className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 c
             onChange={(e) => setFilterLevel(e.target.value)}
             className="border p-2 dark:bg-gray-800"
           >
-            <option value="all">All Levels</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
+            <option value="all">{t("tests.search.levels.all")}</option>
+            <option value="beginner">{t("tests.search.levels.beginner")}</option>
+            <option value="intermediate">{t("tests.search.levels.intermediate")}</option>
+            <option value="advanced">{t("tests.search.levels.advanced")}</option>
           </select>
 
           <input
             type="text"
-            placeholder="Search by name or creator"
+            placeholder={t("topics.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 dark:bg-gray-800"
@@ -115,7 +116,7 @@ className={`px-4 py-2 rounded ${ user ? "bg-primary text-white" : "bg-gray-400 c
             className="border p-4 rounded hover:border-primary cursor-pointer"
           >
             <div className="text-sm text-accent mb-2">
-              {topic.createdBy?.name || "Unknown"}
+              {topic.createdBy?.name || t("subjects.unknown")}
             </div>
             <h3 className="text-lg">{topic.name}</h3>
             <p className="text-sm opacity-70 mt-1">

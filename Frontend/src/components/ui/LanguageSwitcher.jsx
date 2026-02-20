@@ -8,24 +8,29 @@ const LanguageSwitcher = () => {
     localStorage.setItem("i18nextLng", lng)
   }
 
+  const isEN = i18n.language === "en" || i18n.language?.startsWith("en")
+  const isHI = i18n.language === "hi" || i18n.language?.startsWith("hi")
+
   return (
-    <div className="flex gap-2">
+    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
       <button
         onClick={() => changeLanguage("en")}
-        className={`px-2 py-1 border rounded transition-colors ${
-          i18n.language === "en" 
-            ? "bg-primary text-white border-primary" 
-            : "hover:bg-primary hover:text-white dark:border-gray-600"
+        title="English"
+        className={`px-2.5 py-1 rounded-md text-sm font-medium transition-all ${
+          isEN
+            ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
+            : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         }`}
       >
         EN
       </button>
       <button
         onClick={() => changeLanguage("hi")}
-        className={`px-2 py-1 border rounded transition-colors ${
-          i18n.language === "hi" 
-            ? "bg-primary text-white border-primary" 
-            : "hover:bg-primary hover:text-white dark:border-gray-600"
+        title="हिंदी"
+        className={`px-2.5 py-1 rounded-md text-sm font-medium transition-all ${
+          isHI
+            ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
+            : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         }`}
       >
         HI

@@ -108,3 +108,41 @@ export const generateSimulationAI = async (topicId) => {
   )
   return res.json()
 }
+
+// ============= Test APIs =============
+
+export const getAllTests = async () => {
+  const res = await authFetch(`${API_BASE}/api/tests`, {
+    method: "GET"
+  })
+  return res.json()
+}
+
+export const generateTest = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/tests/generate/${topicId}`, {
+    method: "POST"
+  })
+  return res.json()
+}
+
+export const submitTestScore = async (topicId, score, maxScore) => {
+  const res = await authFetch(`${API_BASE}/api/tests/score/${topicId}`, {
+    method: "POST",
+    body: JSON.stringify({ score, maxScore })
+  })
+  return res.json()
+}
+
+export const getTestHighScore = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/tests/highscore/${topicId}`, {
+    method: "GET"
+  })
+  return res.json()
+}
+
+export const getTopicLeaderboard = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/tests/leaderboard/${topicId}`, {
+    method: "GET"
+  })
+  return res.json()
+}

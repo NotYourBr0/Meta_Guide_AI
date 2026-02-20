@@ -104,18 +104,18 @@ const Home = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-6 bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-900 dark:to-sky-800 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-                  AI-Powered Explanations
+                  {t("home.feature1Title") || "AI-Powered Explanations"}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  Get detailed explanations tailored to your learning level
+                  {t("home.feature1Desc") || "Get detailed explanations tailored to your learning level"}
                 </p>
               </div>
               <div className="p-6 bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900 dark:to-violet-800 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-                  Interactive Simulations
+                  {t("home.feature2Title") || "Interactive Simulations"}
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300">
-                  Learn by doing with AI-generated interactive simulations
+                  {t("home.feature2Desc") || "Learn by doing with AI-generated interactive simulations"}
                 </p>
               </div>
             </div>
@@ -157,28 +157,28 @@ const Home = () => {
               <div className="text-center p-6">
                 <div className="text-5xl mb-4"></div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                  Adaptive Learning
+                  {t("home.adaptiveTitle") || "Adaptive Learning"}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Content adapts to your level - from school to university
+                  {t("home.adaptiveDesc") || "Content adapts to your level - from school to university"}
                 </p>
               </div>
               <div className="text-center p-6">
                 <div className="text-5xl mb-4"></div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                  Instant Explanations
+                  {t("home.instantTitle") || "Instant Explanations"}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Get AI-generated explanations in seconds
+                  {t("home.instantDesc") || "Get AI-generated explanations in seconds"}
                 </p>
               </div>
               <div className="text-center p-6">
                 <div className="text-5xl mb-4"></div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                  Multi-Language
+                  {t("home.multiLangTitle") || "Multi-Language"}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Learn in your preferred language
+                  {t("home.multiLangDesc") || "Learn in your preferred language"}
                 </p>
               </div>
             </div>

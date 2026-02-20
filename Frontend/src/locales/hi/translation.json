@@ -4,7 +4,46 @@
   },
   "sidebar": {
     "home": "होम",
-    "subjects": "विषय"
+    "subjects": "विषय",
+    "tests": "टेस्ट"
+  },
+  "tests": {
+    "header": {
+      "title": "टेस्ट",
+      "subtitle": "हर टॉपिक के लिए AI-जनित क्विज़। नया टेस्ट शुरू करने के लिए किसी टॉपिक पर क्लिक करें।"
+    },
+    "search": {
+      "placeholder": "टॉपिक, विषय या निर्माता द्वारा खोजें...",
+      "levels": {
+        "all": "सभी स्तर",
+        "beginner": "शुरुआती",
+        "intermediate": "मध्यम",
+        "advanced": "उन्नत"
+      }
+    },
+    "stats": {
+      "topics": "{{count}} टॉपिक",
+      "topics_plural": "{{count}} टॉपिक",
+      "attempted": "• {{count}} प्रयास किए गए"
+    },
+    "empty": {
+      "title": "कोई टॉपिक नहीं मिला",
+      "subtitle": "अपनी खोज या फ़िल्टर को समायोजित करने का प्रयास करें"
+    },
+    "card": {
+      "ranks": "रैंक",
+      "bestScore": "सर्वोत्तम स्कोर",
+      "questions": "{{count}} प्रश्न",
+      "pts": "{{count}} अंक",
+      "loginToStart": "शुरू करने के लिए लॉगिन करें",
+      "generating": "उत्पन्न हो रहा है...",
+      "retry": "पुनः प्रयास करें →",
+      "start": "शुरू करें →",
+      "noExplanation": "⚠️ अभी कोई व्याख्या नहीं — टेस्ट सामान्य हो सकता है"
+    },
+    "loading": "टेस्ट लोड हो रहे हैं...",
+    "error": "त्रुटि: {{message}}",
+    "unknownCreator": "अज्ञात"
   },
   "home": {
     "welcome": "स्वागत है, {{name}}"

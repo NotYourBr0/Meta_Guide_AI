@@ -8,8 +8,7 @@ export const generateExplanationFromAI = async ({
   language
 }) => {
 
-  const prompt = `
-Generate a structured explanation for the topic.
+  const prompt =` Generate a structured, well-formatted explanation for the topic.
 
 Subject: ${subjectName}
 Subject Level: ${subjectLevel}
@@ -17,100 +16,153 @@ Topic: ${topicName}
 Difficulty: ${topicLevel}
 Language: ${language}
 
-You are an expert ${subjectName} educator. Write a comprehensive, focused, and well-structured explanation for "${topicName}" in ${subjectName}.
+You are an expert ${subjectName} educator.
 
-IMPORTANT FORMATTING RULES:
+Write a clear, complete, and well-organized explanation for "${topicName}" in ${subjectName}, adapted to the given subject level and difficulty.
+
+STRUCTURE RULES:
+
+Do NOT use a fixed template.
+
+Dynamically design the section structure based on:
+
+Subject level
+
+Topic complexity
+
+Difficulty level
+
+Use more sections for advanced topics.
+
+Use simpler sections for beginner topics.
+
+Choose headings that best fit the topic.
+
+FORMATTING RULES:
 
 Output GitHub-Flavored Markdown only.
 
 Do NOT use code blocks or backticks.
 
-Leave one blank line after every heading.
+Use # for main title.
 
-Leave one blank line between every section.
+Use ## and ### for sections.
 
-Use proper Markdown headings with # and ##.
+Leave one blank line after each heading.
 
-Use bullet points with "-" only.
+Leave one blank line between sections.
 
-Use numbered steps with "1." format.
+Use "-" for bullet points.
 
-Do NOT write everything as one paragraph.
+Use "1." for numbered steps.
 
-Keep sections clearly separated with spacing.
+Keep paragraphs short.
 
-Use the exact structure below and preserve spacing:
+Do NOT merge everything into one block.
 
-${topicName}
-Overview
+CONTENT GUIDELINES:
 
-Write a clear, student-friendly introduction.
+Adjust structure and depth automatically:
 
-Key Concepts
+For Beginner Level:
 
-Concept 1
+Simple overview
 
-Concept 2
+Basic concepts
 
-Concept 3
+Examples
 
-Formulas / Equations
+Visual or intuitive explanations
 
-F = m a → Brief explanation
+Simple practice questions
 
-E = m c^2 → Brief explanation
+For Intermediate Level:
 
-(Write equations in plain text only. Do not use LaTeX.)
+Deeper explanations
 
-Step-by-step Reasoning / Procedure
+Formulas
 
-First logical step
+Step-by-step methods
 
-Second logical step
+Applications
 
-Third logical step
+Common mistakes
 
-Real-world Applications
+Practice problems
 
-Application 1
+For Advanced Level:
 
-Application 2
+Theoretical background
 
-Common Misconceptions
+Derivations
 
-Misconception 1 → Correction
+Advanced models
 
-Misconception 2 → Correction
+Edge cases
 
-Quick Check
+Proofs or reasoning
 
-Short question 1
+Complex examples
 
-Short question 2
+Challenging exercises
 
-Answers:
+MANDATORY ELEMENTS (adapt quantity and depth to level):
 
-A1: Brief answer
+Include where appropriate:
 
-A2: Brief answer
+Introduction / Overview
 
-Summary / Takeaways
+Core Concepts
 
-Key takeaway 1
+Definitions
 
-Key takeaway 2
+Formulas or Rules
 
-Key takeaway 3
+Worked Examples
 
-Tone requirements:
+Procedures or Methods
 
-Clear and precise.
+Applications
 
-Adjust depth to match difficulty: ${topicLevel}.
+Misconceptions
 
-Avoid unnecessary filler.
+Practice Questions
 
-Keep explanations focused and structured.
+Answers or Hints
+
+Summary
+
+You may rename, merge, split, or expand sections as needed.
+
+DESIGN & READABILITY:
+
+Make layout visually clean.
+
+Use logical flow from basic to advanced.
+
+Use consistent heading hierarchy.
+
+Balance text and bullet points.
+
+Avoid dense paragraphs.
+
+Make it pleasant to read.
+
+TONE:
+
+Clear and direct.
+
+Student-focused.
+
+No unnecessary filler.
+
+Match depth to: ${topicLevel}.
+
+Maintain professional and engaging style.
+
+OUTPUT GOAL:
+
+Produce a well-structured, attractive, level-appropriate explanation that feels custom-designed for this topic and learner level.
 `
 
   const apiKey = process.env.EXPLANATION_API_KEY

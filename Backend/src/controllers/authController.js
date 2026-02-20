@@ -335,3 +335,48 @@ export const getMe = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Update user's display name (cascades to subjects & topics)
+ * @route   PUT /api/auth/update-name
+ * @access  Private
+ */
+export const updateName = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name cannot be empty' });
+    }
+    if (name.trim().length > 50) {
+      return res.status(400).json({ success: false, message: 'Name cannot exceed 50 characters' });
+    }
+
+    const userId = req.user._id.toString();
+    const trimmedName = name.trim();
+
+    // 1. Update the user document
+    await User.findByIdAndUpdate(userId, { name: trimmedName });
+
+    // 2. Cascade to all subjects created by this user
+    await Subject.updateMany(
+      { 'createdBy.id': userId },
+      { $set: { 'createdBy.name': trimmedName } }
+    );
+
+    // 3. Cascade to all topics created by this user
+    await Topic.updateMany(
+      { 'createdBy.id': userId },
+      { $set: { 'createdBy.name': trimmedName } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Name updated successfully',
+      name: trimmedName,
+    });
+  } catch (error) {
+    console.error('Update name error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
