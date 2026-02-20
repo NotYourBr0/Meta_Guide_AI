@@ -183,7 +183,7 @@ const Tests = () => {
                       title="View Rankings"
                       className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-700/50 transition-all font-medium"
                     >
-                      🏆 <span>{t("tests.card.ranks")}</span>
+                      🏆 <span>See {t("tests.card.ranks")}</span>
                     </button>
                   </div>
                   {hasScore && (

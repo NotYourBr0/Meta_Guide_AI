@@ -31,7 +31,7 @@ const MessageBubble = ({ msg }) => {
           ? 'bg-sky-500 text-white'
           : 'bg-gradient-to-br from-violet-500 to-sky-500 text-white'
       }`}>
-        {isUser ? 'U' : '🤖'}
+        {isUser ? 'U' : 'Yo'}
       </div>
 
       {/* Bubble */}
@@ -55,7 +55,7 @@ const MessageBubble = ({ msg }) => {
 /* ── Typing indicator ────────────────────────────────────── */
 const TypingIndicator = () => (
   <div className="flex gap-2 mb-3">
-    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-xs">🤖</div>
+    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-xs">Yo</div>
     <div className="bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
       <div className="flex gap-1 items-center h-4">
         <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -175,7 +175,7 @@ const AIAssistant = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <span className="text-2xl select-none">🤖</span>
+          <span className="text-2xl select-none text-yellow-400">Yo</span>
         )}
         {/* Pulse ring when closed */}
         {!open && (
@@ -193,7 +193,7 @@ const AIAssistant = () => {
           {/* Header */}
           <div className="bg-gradient-to-r from-sky-500 to-violet-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-lg">🤖</div>
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white text-lg">Yo</div>
               <div>
                 <div className="text-white font-bold text-sm leading-tight">MetaGuide AI</div>
                 <div className="text-sky-100 text-xs">
