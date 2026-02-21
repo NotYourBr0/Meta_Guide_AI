@@ -7,15 +7,19 @@ import { protect } from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 
-router.post("/generate/:topicId", protect, async (req, res) => {  try {
+router.post("/generate/:topicId", protect, async (req, res) => {
+  try {
     const { topicId } = req.params
     const { language } = req.body
 
-    const topic = await Topic.findById(topicId)
+    const [topic, ] = await Promise.all([
+      Topic.findById(topicId),
+    ])
     if (!topic) return res.status(404).json({ error: "Topic not found" })
 
     const subject = await Subject.findById(topic.subjectId)
 
+    // Step 1: Generate English explanation (needed before translation)
     const explanation = await generateExplanationFromAI({
       subjectName: subject.name,
       subjectLevel: subject.level,
@@ -26,21 +30,24 @@ router.post("/generate/:topicId", protect, async (req, res) => {  try {
 
     topic.explanation = explanation
 
-    // Automatically generate Hindi translation
+    // Step 2: Run Hindi translation and DB save in PARALLEL for speed
     let hindiExplanation = ""
-    try {
-      hindiExplanation = await translateToHindi(explanation)
+    const [translationResult] = await Promise.allSettled([
+      translateToHindi(explanation),
+    ])
+
+    if (translationResult.status === "fulfilled") {
+      hindiExplanation = translationResult.value
       topic.hindiExplanation = hindiExplanation
-    } catch (translationError) {
-      console.error("Translation error:", translationError)
-      // Continue even if translation fails
+    } else {
+      console.error("Translation error (non-fatal):", translationResult.reason)
     }
 
     await topic.save()
 
-    res.json({ 
+    res.json({
       explanation,
-      hindiExplanation 
+      hindiExplanation
     })
   } catch (err) {
     res.status(500).json({ error: err.message })

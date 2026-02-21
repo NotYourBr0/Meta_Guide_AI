@@ -28,7 +28,12 @@ IMPORTANT:
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.9,
+        maxOutputTokens: 4096
+      }
     })
   })
 

@@ -178,7 +178,12 @@ Produce a well-structured, attractive, level-appropriate explanation that feels 
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        temperature: 0.5,
+        topP: 0.9,
+        maxOutputTokens: 4096
+      }
     })
   })
 

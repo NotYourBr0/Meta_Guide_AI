@@ -184,11 +184,12 @@ const AIAssistant = () => {
       </button>
 
       {/* Chat panel */}
-      <div className={`fixed bottom-24 right-6 z-[997] w-[360px] max-w-[calc(100vw-2rem)] transition-all duration-300 origin-bottom-right ${
+      <div className={`fixed bottom-[5.5rem] right-6 z-[997] w-[360px] max-w-[calc(100vw-2rem)] transition-all duration-300 origin-bottom-right ${
         open ? 'scale-100 opacity-100 pointer-events-auto' : 'scale-90 opacity-0 pointer-events-none'
-      }`}>
+      }`}
+        style={{ maxHeight: 'calc(100vh - 6rem)' }}>
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden"
-          style={{ height: '520px' }}>
+          style={{ height: 'min(520px, calc(100vh - 6rem))' }}>
 
           {/* Header */}
           <div className="bg-gradient-to-r from-sky-500 to-violet-600 px-4 py-3 flex items-center justify-between flex-shrink-0">

@@ -48,13 +48,17 @@ No external fonts or assets.
 
 SCREEN & RESPONSIVENESS:
 
-Optimize layout for laptops and desktops.
+Set html, body { margin: 0; padding: 0; width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
 
-Minimum width: 1000px.
+Make the root container fill the full available width and height (100vw x 100vh).
 
-Not required to support mobile phones.
+Optimize layout for laptops and desktops (min-width: 1000px).
 
-Prevent layout collapse on small screens.
+The simulation MUST stretch and fill whatever canvas size the browser gives.
+
+Do NOT use fixed pixel widths for the outer container — use 100% width.
+
+Use CSS flexbox or grid to distribute space proportionally.
 
 Show a centered warning message on screens below 900px width.
 
@@ -173,7 +177,12 @@ Follow all rules strictly.`
         parts: [{
           text: prompt
         }]
-      }]
+      }],
+      generationConfig: {
+        temperature: 0.4,
+        topP: 0.9,
+        maxOutputTokens: 8192
+      }
     })
   })
 

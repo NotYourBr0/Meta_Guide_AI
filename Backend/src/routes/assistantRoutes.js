@@ -78,9 +78,9 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
       },
       contents: geminiContents,
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.65,
         topP: 0.9,
-        maxOutputTokens: 1024
+        maxOutputTokens: 768
       }
     }
 
