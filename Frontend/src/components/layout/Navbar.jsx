@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useState, useRef } from "react"
 import { useAuth } from "../../context/AuthContext"
 import LanguageSwitcher from "../ui/LanguageSwitcher"
-import ThemeToggle from "../ui/ThemeToggle"
+import { useTheme } from "../../contexts/ThemeContext"
 
 /* ── Review Modal ─────────────────────────────────────────── */
 const ReviewModal = ({ onClose }) => {
@@ -43,7 +43,7 @@ const ReviewModal = ({ onClose }) => {
       >
         {/* Gradient header */}
         <div className="bg-gradient-to-r from-sky-500 to-violet-600 px-6 py-5">
-          <h2 className="text-xl font-bold text-white">✨ Leave a Review</h2>
+          <h2 className="text-xl font-bold text-white">✨ Leave a Message</h2>
           <p className="text-sky-100 text-sm mt-0.5">We'd love to hear your thoughts!</p>
         </div>
 
@@ -67,7 +67,7 @@ const ReviewModal = ({ onClose }) => {
                 </svg>
               </div>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">Thank you! 🎉</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Your review has been sent successfully.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Your message has been sent successfully.</p>
               <button
                 onClick={onClose}
                 className="mt-2 px-5 py-2 bg-gradient-to-r from-sky-500 to-violet-600 text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -123,6 +123,7 @@ const ReviewModal = ({ onClose }) => {
 const Navbar = () => {
   const { t } = useTranslation()
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showReview, setShowReview] = useState(false)
@@ -149,10 +150,9 @@ const Navbar = () => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
           </svg>
-          Review
+          Contact
         </button>
 
-        <ThemeToggle />
         <LanguageSwitcher />
 
         {isAuthenticated ? (
@@ -197,6 +197,28 @@ const Navbar = () => {
                     Admin Dashboard
                   </Link>
                 )}
+                <hr className="my-2 dark:border-gray-700" />
+
+                {/* ── Theme toggle ── */}
+                <div className="flex items-center justify-between px-4 py-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300 select-none">
+                    {theme === "dark" ? "Dark mode" : "Light mode"}
+                  </span>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      theme === "dark" ? "bg-violet-600" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${
+                        theme === "dark" ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
                 <hr className="my-2 dark:border-gray-700" />
                 <button
                   onClick={handleLogout}
