@@ -23,7 +23,7 @@ const topicSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  simulationPath: {
+  simulationHtml: {
     type: String,
     default: ""
   },

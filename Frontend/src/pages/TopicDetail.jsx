@@ -51,8 +51,9 @@ const TopicDetail = () => {
     setSimulationError(null)
     setLoading(true)
     try {
-      const result = await generateSimulationAI(fetchedTopic._id)
-      setSimulationPath(import.meta.env.VITE_API_BASE_URL + result.simulationPath)
+      await generateSimulationAI(fetchedTopic._id)
+      // Serve HTML from MongoDB via the serve endpoint (survives restarts)
+      setSimulationPath(`${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${fetchedTopic._id}`)
     } catch (err) {
       setSimulationError(err.message || "Failed to generate simulation")
       console.error("Error auto-generating simulation:", err)
@@ -72,9 +73,10 @@ const TopicDetail = () => {
         setTopic(data)
         setExplanation(data.explanation || "")
         setHindiExplanation(data.hindiExplanation || "")
+        // Use DB-backed serve endpoint so simulation survives restarts
         setSimulationPath(
-          data.simulationPath
-            ? import.meta.env.VITE_API_BASE_URL + data.simulationPath
+          data.simulationHtml
+            ? `${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${id}`
             : ""
         )
 
@@ -93,7 +95,7 @@ const TopicDetail = () => {
         }
 
         // After explanation is ready, auto-gen simulation for advanced topics
-        if (data.level === "advanced" && !data.simulationPath && currentExplanation) {
+        if (data.level === "advanced" && !data.simulationHtml && currentExplanation) {
           await autoGenerateSimulation(data)
         }
       } catch (err) {
@@ -126,8 +128,8 @@ const TopicDetail = () => {
     setSimulationError(null)
     setLoading(true)
     try {
-      const result = await generateSimulationAI(topic._id)
-      setSimulationPath(import.meta.env.VITE_API_BASE_URL + result.simulationPath)
+      await generateSimulationAI(topic._id)
+      setSimulationPath(`${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${topic._id}`)
     } catch (err) {
       setSimulationError(err.message || "Failed to generate simulation")
     } finally {
