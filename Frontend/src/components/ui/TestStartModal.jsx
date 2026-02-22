@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import MetaSpinner from "./MetaSpinner"
+import SimpleSpinner from "./SimpleSpinner"
 import TestRunner from "./TestRunner"
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -196,7 +196,7 @@ const TestStartModal = ({ topic, previousHighScore = 0, onClose }) => {
           {/* Loading state: questions streaming in */}
           {phase === "loading" && (
             <div className="text-center space-y-2">
-              <MetaSpinner label="Generating your questions…" />
+              <SimpleSpinner label="Generating your questions…" />
               {receivedCount > 0 && (
                 <p className="text-xs text-gray-400">
                   {receivedCount} / {expectedCount} questions ready…

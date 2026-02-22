@@ -159,9 +159,31 @@ const AIAssistant = () => {
       let buffer = ''
       let done = false
 
+      // Smoothing: Use an interval to "type" out characters from a local buffer
+      const typingBuffer = []
+      let isTyping = true
+
+      const typingInterval = setInterval(() => {
+        if (typingBuffer.length > 0) {
+          const char = typingBuffer.shift()
+          setMessages(prev => {
+            const updated = [...prev]
+            const last = updated[updated.length - 1]
+            if (last && last.role === 'assistant') {
+              updated[updated.length - 1] = { ...last, content: last.content + char }
+            }
+            return updated
+          })
+        } else if (done && !isTyping) {
+            clearInterval(typingInterval)
+            setStreaming(false)
+        }
+      }, 15) // Smooth typing speed
+
       while (!done) {
         const { value, done: streamDone } = await reader.read()
         done = streamDone
+        
         if (value) {
           buffer += decoder.decode(value, { stream: true })
           const lines = buffer.split('\n')
@@ -174,19 +196,15 @@ const AIAssistant = () => {
             try {
               const parsed = JSON.parse(raw)
               if (parsed.text) {
-                setMessages(prev => {
-                  const updated = [...prev]
-                  updated[updated.length - 1] = {
-                    ...updated[updated.length - 1],
-                    content: updated[updated.length - 1].content + parsed.text
-                  }
-                  return updated
-                })
+                // Instead of appending directly, push to typing buffer
+                typingBuffer.push(...parsed.text.split(''))
               }
             } catch { /* ignore partial JSON */ }
           }
         }
       }
+      isTyping = false // Finished receiving, now just wait for buffer to clear
+
     } catch (err) {
       if (err.name !== 'AbortError') {
         setError('Oops, something went wrong. Try again?')
@@ -195,7 +213,7 @@ const AIAssistant = () => {
     } finally {
       readerRef.current = null
       setLoading(false)
-      setStreaming(false)
+      // Note: streaming state is cleared by the interval when buffer is empty
     }
   }
 

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { getAllTests } from "../services/api"
 import TestStartModal from "../components/ui/TestStartModal"
 import RankingsModal from "../components/ui/RankingsModal"
-import MetaSpinner from "../components/ui/MetaSpinner"
+import SimpleSpinner from "../components/ui/SimpleSpinner"
 
 const LEVEL_COLORS = {
   beginner: { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-700" },
@@ -72,7 +72,7 @@ const Tests = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <MetaSpinner label="Loading tests…" />
+        <SimpleSpinner label="Loading tests…" />
       </div>
     )
   }

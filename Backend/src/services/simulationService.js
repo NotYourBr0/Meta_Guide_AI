@@ -6,7 +6,6 @@ export const generateSimulationFromAI = async ({
 }) => {
 
   const prompt = `Create a complete, highly interactive simulation in a single HTML file.
-
 Topic: ${topicName}
 
 Reference Explanation:
@@ -17,152 +16,47 @@ The simulation MUST be designed strictly according to the given explanation.
 All variables, formulas, and behaviors must follow the reference explanation.
 
 OUTPUT RULES:
-
-Return ONLY valid, complete HTML.
-
-Do NOT add explanations outside the simulation.
-
-Do NOT add markdown.
-
-Do NOT wrap output in code blocks.
-
-Start directly with <!DOCTYPE html>.
-
-End with </html>.
+- Return ONLY valid, complete HTML.
+- Start directly with <!DOCTYPE html>.
+- End with </html>.
+- Do NOT add markdown, explanations, or code blocks.
 
 TECHNICAL RULES:
-
-Use only internal <style> and <script>.
-
-No external CDN.
-
-No imports.
-
-No frameworks.
-
-No network requests.
-
-No APIs.
-
-No external fonts or assets.
+- Use only internal <style> and <script>.
+- No external CDN, imports, or frameworks.
+- No network requests or APIs.
 
 SCREEN & RESPONSIVENESS:
-
-Set html, body { margin: 0; padding: 0; width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; }
-
-Make the root container fill the full available width and height (100vw x 100vh).
-
-Optimize layout for laptops and desktops (min-width: 1000px).
-
-The simulation MUST stretch and fill whatever canvas size the browser gives.
-
-Do NOT use fixed pixel widths for the outer container — use 100% width.
-
-Use CSS flexbox or grid to distribute space proportionally.
-
-Show a centered warning message on screens below 900px width.
+- Set html, body { margin: 0; padding: 0; width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; font-family: sans-serif; background: #0f172a; color: white; }
+- Make the root container fill the full available width and height (100vw x 100vh).
+- LAYOUT: Use a two-pane layout for desktop (min-width: 900px).
+    - LEFT (or MAIN): Simulation Canvas area. This MUST take 75-80% of the width.
+    - RIGHT (or SIDE): Control Panel. This MUST take 20-25% of the width.
+- MOBILE: On screens below 900px, switch to a vertical stack.
+    - TOP: Simulation Canvas (takes most of the height).
+    - BOTTOM: Control Panel (minimal height, sticky/scrollable).
+- SCROLLABLE CONTROLS: The Control Panel MUST have "overflow-y: auto" and a slim design. It should be scrollable so it never breaks the layout or gets cut off.
 
 UI & LAYOUT:
-
-Use Flexbox or Grid.
-
-Fixed simulation panel.
-
-Dedicated control panel.
-
-Stable layout with no jumping.
+- Visual-First: The actual interactive simulation is the hero. It must be as large as possible.
+- Purely Interactive: Remove ALL "Explanation Panels," "Formula Summaries," or "Points of Explanation" that take up vertical/horizontal space. 
+- Integrated Data: Formulas and variable meanings should only appear as tooltip hints or dynamic labels inside the control panel or canvas, NOT as static text blocks.
+- One Visualization Area + One Minimal Controls Section ONLY.
 
 INTERACTIVITY:
-
-Include multiple sliders, toggles, and inputs.
-
-All parameters update in real time.
-
-Visual feedback for every change.
-
-Smooth transitions.
-
-No page reload.
-
-EXPLANATION INSIDE SIMULATION:
-
-Include an integrated explanation panel.
-
-Show formulas and variable meanings.
-
-Highlight active values live.
-
-Sync explanations with user input.
-
-No external text outside the UI.
-
-PERFORMANCE:
-
-Use requestAnimationFrame for animation.
-
-Avoid unnecessary DOM updates.
-
-Optimize calculations.
-
-Keep memory usage low.
+- Include sliders, toggles, and inputs for ALL key parameters mentioned in the explanation.
+- Real-time updates with smooth requestAnimationFrame animations.
+- Clear, high-contrast labels for all controls.
 
 DESIGN:
-
-Clean, professional interface.
-
-High contrast.
-
-Readable typography.
-
-Consistent spacing.
-
-No visual clutter.
-
-CONTENT RULES:
-
-Include ONLY:
-
-Simulation canvas/visual area
-
-Control panel
-
-Explanation panel
-
-No:
-
-Headers
-
-Credits
-
-Footer
-
-Ads
-
-Placeholder text
-
-STRUCTURE REQUIREMENT:
-
-One main container
-
-One visualization area
-
-One controls section
-
-One explanation section
+- Dark, premium aesthetic (consistent with #0f172a / #1e293b).
+- Vibrant colors for simulation elements (accent colors like #38bdf8, #818cf8).
+- Minimalist, professional interface.
 
 VALIDATION:
-
-Must run fully offline.
-
-Must pass HTML validation.
-
-No unused code.
-
-No dead variables.
-
-No dead functions.
-
-Follow all rules strictly.`
+- Must run fully offline.
+- High performance, low memory usage.
+- Follow all layout priorities strictly.`
 
   const apiKey = process.env.SIMULATION_API_KEY
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`

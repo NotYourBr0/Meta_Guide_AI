@@ -4,7 +4,7 @@ import { generateSimulationAI, generateExplanation } from "../services/api"
 import { useTranslation } from "react-i18next"
 import { useParams } from "react-router-dom"
 import { useAssistant } from "../contexts/AssistantContext"
-import MetaSpinner from "../components/ui/MetaSpinner"
+import SimpleSpinner from "../components/ui/SimpleSpinner"
 
 const TopicDetail = () => {
   const { id } = useParams()
@@ -150,7 +150,7 @@ const TopicDetail = () => {
   if (!topic) {
     return (
       <div className="flex items-center justify-center h-48">
-        <MetaSpinner label="Loading topic…" />
+        <SimpleSpinner label="Loading topic…" />
       </div>
     )
   }
@@ -204,7 +204,7 @@ const TopicDetail = () => {
 
         {/* Loading spinner while auto-generating */}
         {explanationLoading && (
-          <MetaSpinner label={t("topic.generating") + " explanation…"} />
+          <SimpleSpinner label={t("topic.generating") + " explanation…"} />
         )}
 
         {explanation && !explanationLoading && (
@@ -254,7 +254,7 @@ const TopicDetail = () => {
 
           {/* Loading spinner while auto-generating simulation */}
           {loading && (
-            <MetaSpinner label={t("topic.generating") + " simulation…"} />
+            <SimpleSpinner label={t("topic.generating") + " simulation…"} />
           )}
 
           {/* ── Responsive simulation iframe ─────────────────────── */}

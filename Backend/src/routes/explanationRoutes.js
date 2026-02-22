@@ -12,9 +12,7 @@ router.post("/generate/:topicId", protect, async (req, res) => {
     const { topicId } = req.params
     const { language } = req.body
 
-    const [topic, ] = await Promise.all([
-      Topic.findById(topicId),
-    ])
+    const topic = await Topic.findById(topicId)
     if (!topic) return res.status(404).json({ error: "Topic not found" })
 
     const subject = await Subject.findById(topic.subjectId)

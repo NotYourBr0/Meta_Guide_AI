@@ -1,13 +1,8 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * MetaSpinner — animated "META" dust-particle formation loader.
- * Each letter assembles from scattered particles, one by one, smoothly.
- * Pure CSS + Canvas, zero external deps.
- *
- * Props:
- *   label  {string?}  — optional subtitle text beneath the animation
- *   size   {number?}  — canvas height in px, default 90
+ * MetaSpinner — Optimized animated "META" dust-particle formation loader.
+ * High particle count + exact easing for crisp letter formation.
  */
 const MetaSpinner = ({ label, size = 90 }) => {
   const canvasRef = useRef(null)
@@ -18,12 +13,22 @@ const MetaSpinner = ({ label, size = 90 }) => {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
 
-    const W = canvas.width
-    const H = canvas.height
+    // Handle high DPI screens for crisp rendering
+    const dpr = window.devicePixelRatio || 1
+    const cssW = size * 3.6
+    const cssH = size
+    
+    canvas.width = cssW * dpr
+    canvas.height = cssH * dpr
+    ctx.scale(dpr, dpr)
+
+    const W = cssW
+    const H = cssH
     const letters = ['M', 'E', 'T', 'A']
-    const PARTICLES_PER_LETTER = 32
-    const LETTER_REVEAL_INTERVAL = 420  // ms between each letter starting
-    const LETTER_FORM_DURATION = 700    // ms for particles to travel to target
+    
+    // Animation timing configuration
+    const LETTER_REVEAL_INTERVAL = 300  // ms between each letter starting
+    const LETTER_FORM_DURATION = 1100   // Smooth, longer travel time
 
     // --- Build pixel targets for each letter ---
     function getLetterPixels(char, offsetX) {
@@ -31,18 +36,23 @@ const MetaSpinner = ({ label, size = 90 }) => {
       offscreen.width = W
       offscreen.height = H
       const oc = offscreen.getContext('2d')
-      const fontSize = H * 0.72
+      
+      const fontSize = H * 0.75 
       oc.font = `900 ${fontSize}px 'Inter', 'Segoe UI', sans-serif`
       oc.fillStyle = '#fff'
       oc.textAlign = 'left'
       oc.textBaseline = 'middle'
       oc.fillText(char, offsetX, H / 2)
+      
       const data = oc.getImageData(0, 0, W, H).data
       const pixels = []
-      for (let y = 0; y < H; y += 3) {
-        for (let x = 0; x < W; x += 3) {
+      
+      // Sample every 4th pixel for a dense, recognizable shape
+      for (let y = 0; y < H; y += 4) {
+        for (let x = 0; x < W; x += 4) {
           const idx = (y * W + x) * 4
-          if (data[idx + 3] > 80) pixels.push({ x, y })
+          // Stricter alpha check for crisp edges
+          if (data[idx + 3] > 128) pixels.push({ x, y }) 
         }
       }
       return pixels
@@ -51,7 +61,7 @@ const MetaSpinner = ({ label, size = 90 }) => {
     // Layout letters evenly
     const letterWidth = W / letters.length
     const allLetterPixels = letters.map((ch, i) =>
-      getLetterPixels(ch, i * letterWidth + letterWidth * 0.12)
+      getLetterPixels(ch, i * letterWidth + letterWidth * 0.1)
     )
 
     // Gradient palette per letter
@@ -62,21 +72,18 @@ const MetaSpinner = ({ label, size = 90 }) => {
       ['#fb923c', '#facc15'],  // A — orange→yellow
     ]
 
-    // Build particle groups
+    // Create particles EXACTLY matching the pixel targets
     const groups = letters.map((_, li) => {
       const targets = allLetterPixels[li]
-      return Array.from({ length: PARTICLES_PER_LETTER }, (_, pi) => {
-        const target = targets[Math.floor(Math.random() * targets.length)] || { x: W / 2, y: H / 2 }
+      return targets.map((target, pi) => {
         return {
-          x: Math.random() * W,
-          y: Math.random() * H,
+          sx: W / 2 + (Math.random() - 0.5) * 60, // Start clustered near the center
+          sy: H / 2 + (Math.random() - 0.5) * 60,
           tx: target.x,
           ty: target.y,
-          startTime: null,      // set when this letter's phase begins
-          opacity: 0,
-          size: 1.5 + Math.random() * 2,
+          size: 1.2 + Math.random() * 1.5, // Slightly smaller, refined dots
           color: colors[li][pi % 2],
-          delay: Math.random() * 200, // small per-particle delay within letter
+          delay: Math.random() * 400, // Staggered start times
         }
       })
     })
@@ -84,7 +91,7 @@ const MetaSpinner = ({ label, size = 90 }) => {
     const startTime = performance.now()
     let frame
 
-    function lerp(a, b, t) { return a + (b - a) * t }
+    // Smooth cubic easing for precise, snappy landings
     function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
 
     function draw(now) {
@@ -98,31 +105,28 @@ const MetaSpinner = ({ label, size = 90 }) => {
           const elapsed = now - effectiveStart
           if (elapsed < 0) return
 
+          // Lock t between 0 and 1
           const t = Math.min(elapsed / LETTER_FORM_DURATION, 1)
           const ease = easeOutCubic(t)
 
-          p.x = lerp(p.x, p.tx, 0.08)   // soft spring-like approach
-          p.y = lerp(p.y, p.ty, 0.08)
-          p.opacity = Math.min(t * 2, 1)
+          // Exact easing formula from start to target guarantees perfectly formed letters
+          const currentX = p.sx + (p.tx - p.sx) * ease
+          const currentY = p.sy + (p.ty - p.sy) * ease
+          
+          const opacity = Math.min(t * 2, 1)
 
-          // After fully formed, gentle pulse
-          const pulse = t >= 1 ? 0.82 + 0.18 * Math.sin((now - letterStart) / 400 + li) : ease
-          ctx.globalAlpha = p.opacity * pulse
+          // Gentle vertical breathing effect after the letter is fully formed
+          const floatY = t >= 1 ? Math.sin((now - letterStart) / 600 + p.tx) * 1.5 : 0
 
-          // Glow
-          ctx.shadowColor = p.color
-          ctx.shadowBlur = 6
-
+          ctx.globalAlpha = opacity
           ctx.fillStyle = p.color
           ctx.beginPath()
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+          ctx.arc(currentX, currentY + floatY, p.size, 0, Math.PI * 2)
           ctx.fill()
-
-          ctx.shadowBlur = 0
-          ctx.globalAlpha = 1
         })
       })
 
+      ctx.globalAlpha = 1 // Reset alpha
       frame = requestAnimationFrame(draw)
     }
 
@@ -146,9 +150,11 @@ const MetaSpinner = ({ label, size = 90 }) => {
     >
       <canvas
         ref={canvasRef}
-        width={size * 3.6}
-        height={size}
-        style={{ display: 'block' }}
+        style={{ 
+          display: 'block',
+          width: `${size * 3.6}px`, 
+          height: `${size}px` 
+        }}
         aria-label="Loading…"
       />
       {label && (
@@ -158,6 +164,7 @@ const MetaSpinner = ({ label, size = 90 }) => {
             color: '#94a3b8',
             letterSpacing: '0.04em',
             animation: 'metaPulse 1.6s ease-in-out infinite',
+            margin: 0,
           }}
         >
           {label}
