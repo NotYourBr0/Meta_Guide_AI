@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react"
 import { useAuth } from "../context/AuthContext"
 import { useTranslation } from "react-i18next"
-import { getAllTests, generateTest } from "../services/api"
-import TestRunner from "../components/ui/TestRunner"
+import { getAllTests } from "../services/api"
+import TestStartModal from "../components/ui/TestStartModal"
 import RankingsModal from "../components/ui/RankingsModal"
+import MetaSpinner from "../components/ui/MetaSpinner"
 
 const LEVEL_COLORS = {
   beginner: { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-700" },
@@ -21,8 +22,8 @@ const Tests = () => {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState("")
   const [filterLevel, setFilterLevel] = useState("all")
-  const [generatingId, setGeneratingId] = useState(null)
-  const [activeTest, setActiveTest] = useState(null) // { topicId, topicName, topicLevel, questions, maxScore, previousHighScore }
+  const [generatingId, setGeneratingId] = useState(null) // kept for compat but unused
+  const [activeTest, setActiveTest] = useState(null) // topic object to show start modal
   const [rankingsTopic, setRankingsTopic] = useState(null) // topic object for rankings modal
 
   useEffect(() => {
@@ -52,24 +53,9 @@ const Tests = () => {
     })
   }, [topics, filterLevel, search])
 
-  const handleStartTest = async (topic) => {
+  const handleStartTest = (topic) => {
     if (!user) return
-    setGeneratingId(topic._id)
-    try {
-      const result = await generateTest(topic._id)
-      setActiveTest({
-        topicId: topic._id,
-        topicName: topic.name,
-        topicLevel: topic.level,
-        questions: result.questions,
-        maxScore: result.maxScore,
-        previousHighScore: topic.highScore || 0
-      })
-    } catch (err) {
-      alert("Failed to generate test: " + (err.message || "Unknown error"))
-    } finally {
-      setGeneratingId(null)
-    }
+    setActiveTest(topic)
   }
 
   const handleTestClose = async () => {
@@ -85,9 +71,8 @@ const Tests = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-500 dark:text-gray-400">{t("tests.loading")}</p>
+      <div className="flex flex-col items-center justify-center py-20">
+        <MetaSpinner label="Loading tests…" />
       </div>
     )
   }
@@ -166,7 +151,7 @@ const Tests = () => {
               <div
                 key={topic._id}
                 className="group relative bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all hover:border-primary/40 cursor-pointer overflow-hidden"
-                onClick={() => !isGenerating && user && handleStartTest(topic)}
+                onClick={() => user && handleStartTest(topic)}
               >
                 {/* Decorative gradient blob */}
                 <div className={`absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-20 ${levelStyle.bg}`} />
@@ -241,11 +226,6 @@ const Tests = () => {
 
                   {!user ? (
                     <span className="text-xs text-gray-400">{t("tests.card.loginToStart")}</span>
-                  ) : isGenerating ? (
-                    <div className="flex items-center gap-1.5 text-xs text-primary">
-                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      <span>{t("tests.card.generating")}</span>
-                    </div>
                   ) : (
                     <span className="text-xs font-semibold text-primary group-hover:underline">
                       {topic.attemptCount > 0 ? t("tests.card.retry") : t("tests.card.start")}
@@ -265,16 +245,15 @@ const Tests = () => {
         </div>
       )}
 
-      {/* Test Runner Modal */}
+      {/* Test Start Modal */}
       {activeTest && (
-        <TestRunner
-          topicId={activeTest.topicId}
-          topicName={activeTest.topicName}
-          topicLevel={activeTest.topicLevel}
-          questions={activeTest.questions}
-          maxScore={activeTest.maxScore}
-          previousHighScore={activeTest.previousHighScore}
-          onClose={handleTestClose}
+        <TestStartModal
+          topic={activeTest}
+          previousHighScore={activeTest.highScore || 0}
+          onClose={async () => {
+            setActiveTest(null)
+            try { const data = await getAllTests(); setTopics(data) } catch {}
+          }}
         />
       )}
 

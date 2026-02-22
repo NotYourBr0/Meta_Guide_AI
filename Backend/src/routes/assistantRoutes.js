@@ -6,12 +6,13 @@ const router = express.Router()
 /**
  * POST /api/assistant/chat
  * Body: { messages: [{role, content}], topicName, topicLevel, subjectName }
+ * Streams the Gemini response as Server-Sent Events (text/event-stream).
  */
 router.post('/chat', async (req, res) => {
   try {
     const GEMINI_API_KEY = process.env.GEMINI_ASSISTANT_API_KEY
     const GEMINI_MODEL = 'gemini-3-flash-preview'
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
+    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`
 
     const { messages = [], topicName, topicLevel, subjectName } = req.body
 
@@ -67,7 +68,6 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
       }))
 
     // Gemini requires alternating user/model turns — ensure last message is user
-    // If empty or last is model, add a placeholder (shouldn't happen in normal flow)
     if (geminiContents.length === 0 || geminiContents[geminiContents.length - 1].role === 'model') {
       geminiContents.push({ role: 'user', parts: [{ text: 'Hello' }] })
     }
@@ -84,25 +84,85 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
       }
     }
 
-    const response = await fetch(GEMINI_URL, {
+    const geminiResponse = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
 
-    if (!response.ok) {
-      const errText = await response.text()
+    if (!geminiResponse.ok) {
+      const errText = await geminiResponse.text()
       console.error('Gemini API error:', errText)
       return res.status(502).json({ error: 'AI service error', details: errText })
     }
 
-    const data = await response.json()
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Hmm, I got nothing. Try again?"
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
+    res.flushHeaders()
 
-    res.json({ reply })
+    // Pipe Gemini SSE → client SSE
+    const body = geminiResponse.body
+    let buffer = ''
+
+    body.on('data', (chunk) => {
+      buffer += chunk.toString('utf8')
+      const lines = buffer.split('\n')
+      // Keep the last (potentially incomplete) line in the buffer
+      buffer = lines.pop()
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const raw = line.slice(6).trim()
+        if (!raw || raw === '[DONE]') continue
+
+        try {
+          const parsed = JSON.parse(raw)
+          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+          if (text) {
+            res.write(`data: ${JSON.stringify({ text })}\n\n`)
+          }
+        } catch {
+          // incomplete JSON chunk — ignore
+        }
+      }
+    })
+
+    body.on('end', () => {
+      // Flush remaining buffer
+      if (buffer.startsWith('data: ')) {
+        const raw = buffer.slice(6).trim()
+        if (raw && raw !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(raw)
+            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+            if (text) {
+              res.write(`data: ${JSON.stringify({ text })}\n\n`)
+            }
+          } catch { /* ignore */ }
+        }
+      }
+      res.write('data: [DONE]\n\n')
+      res.end()
+    })
+
+    body.on('error', (err) => {
+      console.error('Gemini stream error:', err)
+      res.write(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
+      res.end()
+    })
+
+    req.on('close', () => {
+      body.destroy()
+    })
+
   } catch (err) {
     console.error('Gemini assistant route error:', err)
-    res.status(500).json({ error: 'Internal server error', details: err.message })
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error', details: err.message })
+    }
   }
 })
 

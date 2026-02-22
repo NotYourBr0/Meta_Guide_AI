@@ -20,8 +20,23 @@ const buildGreeting = (userName, topicContext) => {
   return `Hey ${name}! 👋 What's up?\n\nI'm your MetaGuide AI — think of me as that friend who actually paid attention in every class ever 😄\n\nOpen up any topic and I'll know exactly what you're studying. Or just hit me with a question right now!`
 }
 
+/* ── Streaming cursor blink ──────────────────────────────── */
+const StreamingCursor = () => (
+  <span
+    style={{
+      display: 'inline-block',
+      width: '2px',
+      height: '1em',
+      background: 'currentColor',
+      marginLeft: '2px',
+      verticalAlign: 'text-bottom',
+      animation: 'cursorBlink 0.7s steps(1) infinite',
+    }}
+  />
+)
+
 /* ── Message bubble ──────────────────────────────────────── */
-const MessageBubble = ({ msg }) => {
+const MessageBubble = ({ msg, streaming = false }) => {
   const isUser = msg.role === 'user'
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-3`}>
@@ -45,26 +60,13 @@ const MessageBubble = ({ msg }) => {
         ) : (
           <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-1">
             <ReactMarkdown>{msg.content}</ReactMarkdown>
+            {streaming && <StreamingCursor />}
           </div>
         )}
       </div>
     </div>
   )
 }
-
-/* ── Typing indicator ────────────────────────────────────── */
-const TypingIndicator = () => (
-  <div className="flex gap-2 mb-3">
-    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-xs">Yo</div>
-    <div className="bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-      <div className="flex gap-1 items-center h-4">
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-      </div>
-    </div>
-  </div>
-)
 
 /* ── Main AIAssistant component ──────────────────────────── */
 const AIAssistant = () => {
@@ -74,19 +76,21 @@ const AIAssistant = () => {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([]) // [{role, content}]
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false)   // true while waiting for first token
+  const [streaming, setStreaming] = useState(false) // true while tokens are arriving
   const [error, setError] = useState(null)
   const [initialized, setInitialized] = useState(false)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const prevTopicRef = useRef(null)
+  const readerRef = useRef(null)   // holds active SSE reader so we can cancel
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
-  useEffect(scrollToBottom, [messages, loading])
+  useEffect(scrollToBottom, [messages, loading, streaming])
 
   // Focus input when opened
   useEffect(() => {
@@ -109,12 +113,19 @@ const AIAssistant = () => {
 
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text || loading) return
+    if (!text || loading || streaming) return
+
+    // Cancel any in-flight stream
+    if (readerRef.current) {
+      readerRef.current.cancel()
+      readerRef.current = null
+    }
 
     const newMessages = [...messages, { role: 'user', content: text }]
     setMessages(newMessages)
     setInput('')
     setLoading(true)
+    setStreaming(false)
     setError(null)
 
     try {
@@ -134,13 +145,57 @@ const AIAssistant = () => {
       })
 
       if (!res.ok) throw new Error(`Server error ${res.status}`)
-      const data = await res.json()
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-    } catch (err) {
-      setError('Oops, something went wrong. Try again?')
-      console.error('Assistant error:', err)
-    } finally {
+      if (!res.body) throw new Error('No response body')
+
+      const reader = res.body.getReader()
+      readerRef.current = reader
+      const decoder = new TextDecoder('utf-8')
+
+      // Add an empty assistant message to stream into
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
       setLoading(false)
+      setStreaming(true)
+
+      let buffer = ''
+      let done = false
+
+      while (!done) {
+        const { value, done: streamDone } = await reader.read()
+        done = streamDone
+        if (value) {
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() // keep incomplete last line
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const raw = line.slice(6).trim()
+            if (!raw || raw === '[DONE]') continue
+            try {
+              const parsed = JSON.parse(raw)
+              if (parsed.text) {
+                setMessages(prev => {
+                  const updated = [...prev]
+                  updated[updated.length - 1] = {
+                    ...updated[updated.length - 1],
+                    content: updated[updated.length - 1].content + parsed.text
+                  }
+                  return updated
+                })
+              }
+            } catch { /* ignore partial JSON */ }
+          }
+        }
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError('Oops, something went wrong. Try again?')
+        console.error('Assistant error:', err)
+      }
+    } finally {
+      readerRef.current = null
+      setLoading(false)
+      setStreaming(false)
     }
   }
 
@@ -152,13 +207,28 @@ const AIAssistant = () => {
   }
 
   const clearChat = () => {
+    if (readerRef.current) {
+      readerRef.current.cancel()
+      readerRef.current = null
+    }
     const greeting = buildGreeting(user?.name, topicContext)
     setMessages([{ role: 'assistant', content: greeting }])
     setError(null)
+    setLoading(false)
+    setStreaming(false)
   }
+
+  const isBusy = loading || streaming
 
   return (
     <>
+      <style>{`
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      `}</style>
+
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -228,9 +298,27 @@ const AIAssistant = () => {
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0 bg-gray-50 dark:bg-gray-800"
             style={{ scrollbarWidth: 'thin' }}>
             {messages.map((msg, i) => (
-              <MessageBubble key={i} msg={msg} />
+              <MessageBubble
+                key={i}
+                msg={msg}
+                streaming={streaming && i === messages.length - 1 && msg.role === 'assistant'}
+              />
             ))}
-            {loading && <TypingIndicator />}
+
+            {/* Waiting for first token: show pulsing dots */}
+            {loading && (
+              <div className="flex gap-2 mb-3">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center text-xs">Yo</div>
+                <div className="bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                  <div className="flex gap-1 items-center h-4">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="text-center text-xs text-red-500 dark:text-red-400 py-1">{error}</div>
             )}
@@ -247,7 +335,7 @@ const AIAssistant = () => {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything... 💬"
                 rows={1}
-                disabled={loading}
+                disabled={isBusy}
                 className="flex-1 resize-none px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 transition disabled:opacity-50"
                 style={{ maxHeight: '100px', overflowY: 'auto' }}
                 onInput={e => {
@@ -257,13 +345,17 @@ const AIAssistant = () => {
               />
               <button
                 onClick={sendMessage}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || isBusy}
                 className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 text-white flex items-center justify-center hover:opacity-90 disabled:opacity-40 transition-all"
                 title="Send"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                {streaming ? (
+                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
               </button>
             </div>
             <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5 text-center">
