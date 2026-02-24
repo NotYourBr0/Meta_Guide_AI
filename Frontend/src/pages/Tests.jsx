@@ -143,8 +143,6 @@ const Tests = () => {
           {filteredTopics.map(topic => {
             const levelStyle = LEVEL_COLORS[topic.level] || LEVEL_COLORS.beginner
             const questionCount = QUESTION_COUNTS[topic.level] || 5
-            const hasScore = topic.highScore > 0
-            const scorePercent = topic.maxScore > 0 ? Math.round((topic.highScore / topic.maxScore) * 100) : 0
 
             return (
               <div
@@ -176,12 +174,6 @@ const Tests = () => {
                       🏆 <span>See {t("tests.card.ranks")}</span>
                     </button>
                   </div>
-                  {hasScore && (
-                    <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400 font-semibold">
-                      <span>⭐</span>
-                      <span>{topic.highScore}/{topic.maxScore}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Topic name */}
@@ -206,24 +198,8 @@ const Tests = () => {
                   </span>
                 </div>
 
-                {/* Score progress bar */}
-                {hasScore && (
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span>{t("tests.card.bestScore")}</span>
-                      <span>{scorePercent}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
-                      <div
-                        className="h-1.5 rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all"
-                        style={{ width: `${scorePercent}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
                 {/* Footer */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span>📝 {t("tests.card.questions", { count: questionCount })}</span>
                     <span>⭐ {t("tests.card.pts", { count: questionCount * 10 })}</span>
@@ -254,7 +230,6 @@ const Tests = () => {
       {activeTest && (
         <TestStartModal
           topic={activeTest}
-          previousHighScore={activeTest.highScore || 0}
           onClose={async () => {
             setActiveTest(null)
             try { const data = await getAllTests(); setTopics(data) } catch {}
