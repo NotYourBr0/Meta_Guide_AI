@@ -35,7 +35,7 @@ Return ONLY a valid JSON array of exactly 50 objects, no markdown, no extra text
 Generate all 50 questions now:`
 
   const apiKey = process.env.TEST_API_KEY
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 120000) // 2 min timeout for 50 Qs
