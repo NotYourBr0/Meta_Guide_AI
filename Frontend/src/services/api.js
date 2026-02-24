@@ -119,7 +119,7 @@ export const getAllTests = async () => {
 }
 
 export const generateTest = async (topicId) => {
-  const res = await authFetch(`${API_BASE}/api/tests/generate/${topicId}`, {
+  const res = await authFetch(`${API_BASE}/api/tests/generate-bank/${topicId}`, {
     method: "POST"
   })
   return res.json()

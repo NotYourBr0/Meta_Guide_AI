@@ -23,10 +23,28 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // CORS configuration to allow credentials
+const allowedOrigins = [
+  "https://metaguideai.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000"
+]
+
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true)
+    }
+    return callback(new Error(`CORS: Origin ${origin} not allowed`))
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }))
+
+// Handle preflight requests for all routes
+app.options("*", cors())
 app.use(express.json())
 
 // Serve simulation files
