@@ -5,7 +5,8 @@
   "sidebar": {
     "home": "होम",
     "subjects": "विषय",
-    "tests": "टेस्ट"
+    "tests": "टेस्ट",
+    "leaderboard": "लीडरबोर्ड"
   },
   "tests": {
     "header": {

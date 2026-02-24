@@ -132,7 +132,7 @@ const TestStartModal = ({ topic, onClose }) => {
                 onClick={handleStart}
                 className={`flex-1 py-3 rounded-2xl bg-gradient-to-r ${levelStyle.gradient} text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg`}
               >
-                🚀 Start
+                Start
               </button>
             </div>
           )}

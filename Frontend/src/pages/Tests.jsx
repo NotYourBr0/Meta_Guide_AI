@@ -162,7 +162,7 @@ const Tests = () => {
                     {/* Question bank indicator */}
                     {topic.hasQuestionBank && (
                       <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 font-medium">
-                        📚 {BANK_SIZE}Q bank
+                         {BANK_SIZE}Q bank
                       </span>
                     )}
                     {/* Rankings button */}

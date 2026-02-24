@@ -147,6 +147,13 @@ export const getTopicLeaderboard = async (topicId) => {
   return res.json()
 }
 
+export const getGlobalLeaderboard = async () => {
+  const res = await authFetch(`${API_BASE}/api/tests/global-leaderboard`, {
+    method: "GET"
+  })
+  return res.json()
+}
+
 // Fetch randomly selected questions from the question bank
 export const getTestQuestions = async (topicId) => {
   const res = await authFetch(`${API_BASE}/api/tests/questions/${topicId}`, {

@@ -43,6 +43,18 @@ const Sidebar = () => {
         >
           {t("sidebar.tests")}
         </NavLink>
+        <NavLink 
+          to="/leaderboard" 
+          className={({ isActive }) => 
+            `block px-4 py-2 rounded-lg transition-colors ${
+              isActive 
+                ? 'bg-primary/10 text-primary font-medium' 
+                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`
+          }
+        >
+          {t("sidebar.leaderboard")}
+        </NavLink>
       </nav>
     </div>
   )

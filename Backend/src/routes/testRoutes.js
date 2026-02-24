@@ -235,6 +235,43 @@ router.get("/highscore/:topicId", protect, async (req, res) => {
   }
 })
 
+// GET /api/tests/global-leaderboard — Get all users ranked by total high-score sum (public)
+router.get("/global-leaderboard", async (req, res) => {
+  try {
+    const aggregated = await Test.aggregate([
+      { $match: { highScore: { $gt: 0 } } },
+      {
+        $group: {
+          _id: "$userId",
+          totalScore: { $sum: "$highScore" },
+          topicsAttempted: { $sum: 1 }
+        }
+      },
+      { $sort: { totalScore: -1 } },
+      { $limit: 100 }
+    ])
+
+    if (aggregated.length === 0) return res.json([])
+
+    const userIds = aggregated.map(a => a._id)
+    const users = await User.find({ _id: { $in: userIds } }).select("name").lean()
+    const userMap = {}
+    users.forEach(u => { userMap[u._id.toString()] = u.name })
+
+    const leaderboard = aggregated.map((entry, idx) => ({
+      rank: idx + 1,
+      userId: entry._id,
+      name: userMap[entry._id] || "Unknown",
+      totalScore: entry.totalScore,
+      topicsAttempted: entry.topicsAttempted
+    }))
+
+    res.json(leaderboard)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // GET /api/tests/leaderboard/:topicId — Get ranked leaderboard for a topic (public)
 router.get("/leaderboard/:topicId", async (req, res) => {
   try {

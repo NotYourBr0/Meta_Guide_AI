@@ -129,6 +129,10 @@ const TestRunner = ({ topicId, topicName, topicLevel, questions, maxScore, onClo
       try {
         const result = await submitTestScore(topicId, newScore, maxScore)
         setScoreResult(result)
+        // Fire event so Leaderboard page refreshes immediately if open
+        if (result.isNewHighScore) {
+          window.dispatchEvent(new CustomEvent("leaderboard-updated"))
+        }
       } catch (err) {
         console.error("Failed to save score:", err)
         setScoreResult({ highScore: newScore, isNewHighScore: true })
