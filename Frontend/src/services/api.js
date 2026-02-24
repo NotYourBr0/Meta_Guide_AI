@@ -146,3 +146,19 @@ export const getTopicLeaderboard = async (topicId) => {
   })
   return res.json()
 }
+
+// Fetch randomly selected questions from the question bank
+export const getTestQuestions = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/tests/questions/${topicId}`, {
+    method: "GET"
+  })
+  return res.json()
+}
+
+// Trigger generation of 50-question bank for a topic
+export const generateQuestionBank = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/tests/generate-bank/${topicId}`, {
+    method: "POST"
+  })
+  return res.json()
+}

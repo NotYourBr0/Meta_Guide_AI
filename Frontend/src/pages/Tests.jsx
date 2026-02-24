@@ -13,6 +13,7 @@ const LEVEL_COLORS = {
 }
 
 const QUESTION_COUNTS = { beginner: 5, intermediate: 5, advanced: 10 }
+const BANK_SIZE = 50
 
 const Tests = () => {
   const { t } = useTranslation()
@@ -22,7 +23,6 @@ const Tests = () => {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState("")
   const [filterLevel, setFilterLevel] = useState("all")
-  const [generatingId, setGeneratingId] = useState(null) // kept for compat but unused
   const [activeTest, setActiveTest] = useState(null) // topic object to show start modal
   const [rankingsTopic, setRankingsTopic] = useState(null) // topic object for rankings modal
 
@@ -143,7 +143,6 @@ const Tests = () => {
           {filteredTopics.map(topic => {
             const levelStyle = LEVEL_COLORS[topic.level] || LEVEL_COLORS.beginner
             const questionCount = QUESTION_COUNTS[topic.level] || 5
-            const isGenerating = generatingId === topic._id
             const hasScore = topic.highScore > 0
             const scorePercent = topic.maxScore > 0 ? Math.round((topic.highScore / topic.maxScore) * 100) : 0
 
@@ -158,10 +157,16 @@ const Tests = () => {
 
                 {/* Level badge + rankings button */}
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${levelStyle.bg} ${levelStyle.text}`}>
                       {topic.level}
                     </span>
+                    {/* Question bank indicator */}
+                    {topic.hasQuestionBank && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700/50 font-medium">
+                        📚 {BANK_SIZE}Q bank
+                      </span>
+                    )}
                     {/* Rankings button */}
                     <button
                       onClick={e => { e.stopPropagation(); setRankingsTopic(topic) }}
