@@ -8,7 +8,8 @@
     "sidebar": {
         "home": "Home",
         "subjects": "Subjects",
-        "tests": "Tests"
+        "tests": "Tests",
+        "leaderboard": "Leaderboard"
     },
     "subjects": {
         "loading": "Loading...",
