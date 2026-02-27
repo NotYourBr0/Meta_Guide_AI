@@ -3,20 +3,24 @@ import fetch from 'node-fetch'
 
 const router = express.Router()
 
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
+const GROQ_MODEL    = 'llama-3.3-70b-versatile'
+
 /**
  * POST /api/assistant/chat
  * Body: { messages: [{role, content}], topicName, topicLevel, subjectName }
- * Streams the Gemini response as Server-Sent Events (text/event-stream).
+ * Streams the Groq response as Server-Sent Events (text/event-stream).
  */
 router.post('/chat', async (req, res) => {
   try {
-    const GEMINI_API_KEY = process.env.GEMINI_ASSISTANT_API_KEY
-    const GEMINI_MODEL = 'gemini-3-flash-preview'
-    const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`
+    const GROQ_API_KEY = process.env.GROQ_API_KEY
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: 'GROQ_API_KEY is not configured on the server.' })
+    }
 
     const { messages = [], topicName, topicLevel, subjectName } = req.body
 
-    // Build context-aware system instruction
+    // ── Build context-aware system instruction ────────────────────────────────
     const contextParts = []
     if (subjectName) contextParts.push(`Subject: "${subjectName}"`)
     if (topicName)   contextParts.push(`Topic: "${topicName}"`)
@@ -59,53 +63,47 @@ Format your responses cleanly:
 
 Remember: you're their study buddy, not their professor. Make learning fun!`
 
-    // Convert messages to Gemini format (skip system messages, map roles)
-    const geminiContents = messages
-      .filter(m => m.role !== 'system')
-      .map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }))
+    // ── Build Groq-compatible messages array ──────────────────────────────────
+    const groqMessages = [
+      { role: 'system', content: systemInstruction },
+      ...messages
+        .filter(m => m.role !== 'system')          // strip any client-side system msgs
+        .map(m => ({ role: m.role, content: m.content }))
+    ]
 
-    // Gemini requires alternating user/model turns — ensure last message is user
-    if (geminiContents.length === 0 || geminiContents[geminiContents.length - 1].role === 'model') {
-      geminiContents.push({ role: 'user', parts: [{ text: 'Hello' }] })
-    }
-
-    const payload = {
-      system_instruction: {
-        parts: [{ text: systemInstruction }]
-      },
-      contents: geminiContents,
-      generationConfig: {
-        temperature: 0.65,
-        topP: 0.9,
-        maxOutputTokens: 768
-      }
-    }
-
-    const geminiResponse = await fetch(GEMINI_URL, {
+    // ── Call Groq streaming endpoint ──────────────────────────────────────────
+    const groqResponse = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: groqMessages,
+        temperature: 0.65,
+        top_p: 0.9,
+        max_tokens: 768,
+        stream: true
+      })
     })
 
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text()
-      console.error('Gemini API error:', errText)
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text()
+      console.error('Groq API error:', errText)
       return res.status(502).json({ error: 'AI service error', details: errText })
     }
 
-    // Set SSE headers
+    // ── Set SSE headers ───────────────────────────────────────────────────────
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
     res.setHeader('X-Accel-Buffering', 'no')
     res.flushHeaders()
 
-    // Pipe Gemini SSE → client SSE
-    const body = geminiResponse.body
-    let buffer = ''
+    // ── Pipe Groq SSE → client SSE ────────────────────────────────────────────
+    const body  = groqResponse.body
+    let   buffer = ''
 
     body.on('data', (chunk) => {
       buffer += chunk.toString('utf8')
@@ -120,7 +118,8 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
 
         try {
           const parsed = JSON.parse(raw)
-          const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+          // Groq uses OpenAI delta format: choices[0].delta.content
+          const text = parsed.choices?.[0]?.delta?.content
           if (text) {
             res.write(`data: ${JSON.stringify({ text })}\n\n`)
           }
@@ -131,13 +130,13 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
     })
 
     body.on('end', () => {
-      // Flush remaining buffer
+      // Flush any remaining buffer
       if (buffer.startsWith('data: ')) {
         const raw = buffer.slice(6).trim()
         if (raw && raw !== '[DONE]') {
           try {
             const parsed = JSON.parse(raw)
-            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+            const text = parsed.choices?.[0]?.delta?.content
             if (text) {
               res.write(`data: ${JSON.stringify({ text })}\n\n`)
             }
@@ -149,7 +148,7 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
     })
 
     body.on('error', (err) => {
-      console.error('Gemini stream error:', err)
+      console.error('Groq stream error:', err)
       res.write(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
       res.end()
     })
@@ -159,7 +158,7 @@ Remember: you're their study buddy, not their professor. Make learning fun!`
     })
 
   } catch (err) {
-    console.error('Gemini assistant route error:', err)
+    console.error('Groq assistant route error:', err)
     if (!res.headersSent) {
       res.status(500).json({ error: 'Internal server error', details: err.message })
     }
