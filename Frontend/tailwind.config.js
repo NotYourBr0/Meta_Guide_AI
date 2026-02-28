@@ -9,6 +9,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '400px',
+      },
       colors: {
         primary: "#0ea5e9",   // sky blue
         accent: "#8b5cf6",    // violet

@@ -136,21 +136,25 @@ const Navbar = () => {
 
   return (
     <>
-    <div className="flex justify-between items-center px-6 py-3 border-b dark:border-gray-700">
-      <Link to="/" className="text-xl font-semibold text-primary">
-        MetaGuide AI
+    <div className="flex justify-between items-center px-4 md:px-6 py-2.5 md:py-3 border-b dark:border-gray-700 bg-white/80 dark:bg-darkbg/80 backdrop-blur-md sticky top-0 z-[100]">
+      <Link to="/" className="flex items-center group outline-none">
+        <img
+          src="/meta.png"
+          alt="Meta Guide AI Logo"
+          className="h-8 w-auto sm:h-9 md:h-11 object-contain transition-all duration-300 group-hover:scale-105"
+        />
       </Link>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Review Button */}
         <button
           onClick={() => setShowReview(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-sky-400 text-sky-600 dark:text-sky-400 dark:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-sky-400 text-sky-600 dark:text-sky-400 dark:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-95 shadow-sm"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 sm:w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
           </svg>
-          Contact
+          <span className="hidden xs:inline">Contact</span>
         </button>
 
         <LanguageSwitcher />
@@ -159,16 +163,16 @@ const Navbar = () => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 px-4 py-2 border rounded-full hover:bg-accent hover:text-white dark:border-gray-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 border rounded-full hover:bg-accent hover:text-white dark:border-gray-600 transition-all active:scale-95"
             >
               {user?.avatar && (
                 <img
                   src={user.avatar}
                   alt={user.name}
-                  className="w-6 h-6 rounded-full"
+                  className="w-5 h-5 md:w-6 md:h-6 rounded-full object-cover"
                 />
               )}
-              <span>{user?.name || "User"}</span>
+              <span className="text-xs md:text-sm font-medium hidden xs:inline">{user?.name || "User"}</span>
               <svg
                 className={`w-4 h-4 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
                 fill="none"
@@ -233,13 +237,13 @@ const Navbar = () => {
           <div className="flex items-center gap-2">
             <Link
               to="/login"
-              className="px-4 py-2 border rounded-full hover:bg-accent hover:text-white dark:border-gray-600 transition-colors"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm border rounded-full hover:bg-accent hover:text-white dark:border-gray-600 transition-colors"
             >
               {t("navbar.login") || "Login"}
             </Link>
             <Link
               to="/signup"
-              className="px-4 py-2 bg-accent text-white rounded-full hover:bg-opacity-90 transition-colors"
+              className="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-accent text-white rounded-full hover:bg-opacity-90 transition-colors shadow-md"
             >
               {t("navbar.signup") || "Sign Up"}
             </Link>

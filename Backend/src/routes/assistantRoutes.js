@@ -25,6 +25,7 @@ router.post('/chat', async (req, res) => {
     if (subjectName) contextParts.push(`Subject: "${subjectName}"`)
     if (topicName)   contextParts.push(`Topic: "${topicName}"`)
     if (topicLevel)  contextParts.push(`Difficulty level: ${topicLevel}`)
+    console.log({subjectName})
 
     const contextLine = contextParts.length
       ? `The user is currently studying — ${contextParts.join(', ')}.`
@@ -39,7 +40,7 @@ router.post('/chat', async (req, res) => {
         ? 'You can go deep and technical, but still keep it engaging and use real-world examples.'
         : 'Adapt your explanation depth based on what the user seems to need.'
 
-    const systemInstruction = `You are the MetaGuide AI Assistant — basically the user's smartest, chillest best friend who happens to know everything about everything.
+    const systemInstruction = `You are the MetaGuide AI Assistant and your name is 'Yo'— basically the user's smartest, chillest best friend who happens to know everything about everything.
 
 ${contextLine}
 

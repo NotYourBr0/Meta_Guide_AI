@@ -67,6 +67,8 @@ export const protect = async (req, res, next) => {
  */
 export const superAdminOnly = (req, res, next) => {
   try {
+    const userName = req.user.name; 
+    console.log(`User ${userName} is chatting`);
     // Check if user role is superadmin
     if (req.user.role !== 'superadmin') {
       return res.status(403).json({
