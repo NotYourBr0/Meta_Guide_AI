@@ -1,189 +1,301 @@
-import { useRef, useState, useEffect, useCallback } from "react"
-import ReactMarkdown from 'react-markdown'
-import { generateSimulationAI, generateExplanation } from "../services/api"
+import { useCallback, useEffect, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
 import { useTranslation } from "react-i18next"
-import { useParams } from "react-router-dom"
-import { useAssistant } from "../contexts/AssistantContext"
+import { useNavigate, useParams } from "react-router-dom"
 import SimpleSpinner from "../components/ui/SimpleSpinner"
+import { useAuth } from "../context/AuthContext"
+import { useAssistant } from "../contexts/AssistantContext"
+import {
+  generateExplanation,
+  generateSimulationAI,
+  getTopicById,
+  likeTopic,
+  unlikeTopic
+} from "../services/api"
+
+const ACTIVE_STATUSES = new Set(["queued", "processing"])
+
+const isActiveStatus = (status) => ACTIVE_STATUSES.has(status)
+
+const shouldPollTopic = (topic) => {
+  if (!topic?.generationStatus) {
+    return false
+  }
+
+  return (
+    isActiveStatus(topic.generationStatus.explanation?.status) ||
+    isActiveStatus(topic.generationStatus.questionBank?.status) ||
+    (topic.level === "advanced" && isActiveStatus(topic.generationStatus.simulation?.status))
+  )
+}
+
+const formatLikesCount = (value = 0) => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1).replace(/\.0$/, "")}M`
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1).replace(/\.0$/, "")}K`
+  }
+
+  return `${value}`
+}
 
 const TopicDetail = () => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
   const { updateTopicContext, clearTopicContext } = useAssistant()
 
   const [topic, setTopic] = useState(null)
   const [explanation, setExplanation] = useState("")
   const [hindiExplanation, setHindiExplanation] = useState("")
+  const [pageLoading, setPageLoading] = useState(true)
   const [explanationLoading, setExplanationLoading] = useState(false)
   const [explanationError, setExplanationError] = useState(null)
-
   const [simulationPath, setSimulationPath] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [simulationLoading, setSimulationLoading] = useState(false)
   const [simulationError, setSimulationError] = useState(null)
+  const [likeBusy, setLikeBusy] = useState(false)
+  const [likeError, setLikeError] = useState(null)
+  const [showBackToTop, setShowBackToTop] = useState(false)
 
-  /* ── Auto-generate explanation ────────────────────────────── */
-  const autoGenerateExplanation = useCallback(async (fetchedTopic) => {
-    setExplanationError(null)
-    setExplanationLoading(true)
-    try {
-      const result = await generateExplanation(fetchedTopic._id, i18n.language)
-      setExplanation(result.explanation)
-      setHindiExplanation(result.hindiExplanation || "")
-      return result.explanation // pass forward for chaining
-    } catch (err) {
-      setExplanationError(err.message || "Failed to generate explanation")
-      console.error("Error auto-generating explanation:", err)
-      return null
-    } finally {
-      setExplanationLoading(false)
+  const pageRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+  const iframeRef = useRef(null)
+
+  const loadTopic = useCallback(async ({ showLoader = false } = {}) => {
+    if (showLoader) {
+      setPageLoading(true)
     }
-  }, [i18n.language])
 
-  /* ── Auto-generate simulation ─────────────────────────────── */
-  const autoGenerateSimulation = useCallback(async (fetchedTopic) => {
-    setSimulationError(null)
-    setLoading(true)
     try {
-      await generateSimulationAI(fetchedTopic._id)
-      // Serve HTML from MongoDB via the serve endpoint (survives restarts)
-      setSimulationPath(`${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${fetchedTopic._id}`)
-    } catch (err) {
-      setSimulationError(err.message || "Failed to generate simulation")
-      console.error("Error auto-generating simulation:", err)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      const data = await getTopicById(id)
+      setTopic(data)
+      setExplanation(data.explanation || "")
+      setHindiExplanation(data.hindiExplanation || "")
+      setSimulationPath(
+        data.simulationHtml
+          ? `${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${id}`
+          : ""
+      )
 
-  /* ── Initial fetch + auto-generate chain ─────────────────── */
+      updateTopicContext({
+        topicName: data.name,
+        topicLevel: data.level,
+        subjectName: data.subjectId?.name || null,
+        topicExplanation: data.explanation || ""
+      })
+    } catch (error) {
+      console.error("Error fetching topic:", error)
+    } finally {
+      if (showLoader) {
+        setPageLoading(false)
+      }
+    }
+  }, [id, updateTopicContext])
+
   useEffect(() => {
-    const fetchTopic = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/topics/single/${id}`
-        )
-        const data = await res.json()
-        setTopic(data)
-        setExplanation(data.explanation || "")
-        setHindiExplanation(data.hindiExplanation || "")
-        // Use DB-backed serve endpoint so simulation survives restarts
-        setSimulationPath(
-          data.simulationHtml
-            ? `${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${id}`
-            : ""
-        )
+    loadTopic({ showLoader: true })
+    return () => clearTopicContext()
+  }, [clearTopicContext, loadTopic])
 
-        updateTopicContext({
-          topicName: data.name,
-          topicLevel: data.level,
-          subjectName: data.subjectId?.name || null,
-        })
+  useEffect(() => {
+    if (!topic || !shouldPollTopic(topic)) {
+      return undefined
+    }
 
-        // ── Auto-generate if content is missing ────────────────
-        let currentExplanation = data.explanation
+    const intervalId = setInterval(() => {
+      loadTopic()
+    }, 4000)
 
-        if (!currentExplanation) {
-          // No explanation — generate it first
-          currentExplanation = await autoGenerateExplanation(data)
-        }
+    return () => clearInterval(intervalId)
+  }, [topic, loadTopic])
 
-        // After explanation is ready, auto-gen simulation for advanced topics
-        if (data.level === "advanced" && !data.simulationHtml && currentExplanation) {
-          await autoGenerateSimulation(data)
-        }
-      } catch (err) {
-        console.error("Error fetching topic:", err)
+  useEffect(() => {
+    if (!pageRef.current) {
+      return undefined
+    }
+
+    const scrollContainer = pageRef.current?.closest(".overflow-y-auto")
+    scrollContainerRef.current = scrollContainer || null
+
+    const onScroll = () => {
+      const scrollTop = scrollContainer ? scrollContainer.scrollTop : window.scrollY
+      setShowBackToTop(scrollTop > 280)
+    }
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", onScroll, { passive: true })
+    } else {
+      window.addEventListener("scroll", onScroll, { passive: true })
+    }
+
+    onScroll()
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", onScroll)
+      } else {
+        window.removeEventListener("scroll", onScroll)
+      }
+    }
+  }, [pageLoading, topic?._id])
+
+  const handleLikeToggle = async () => {
+    if (!user || !topic || likeBusy) {
+      return
+    }
+
+    if (topic.isLikedByUser) {
+      const shouldUnlike = window.confirm("Remove your like from this topic?")
+      if (!shouldUnlike) {
+        return
       }
     }
 
-    fetchTopic()
-    return () => clearTopicContext()
-  }, [id]) // eslint-disable-line
+    setLikeBusy(true)
+    setLikeError(null)
 
-  const simulationRef = useRef(null)
-  const iframeRef = useRef(null)
+    try {
+      const result = topic.isLikedByUser
+        ? await unlikeTopic(topic._id)
+        : await likeTopic(topic._id)
 
-  const scrollToSimulation = () => {
-    simulationRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  const toggleFullscreen = () => {
-    if (!iframeRef.current) return
-    if (!document.fullscreenElement) {
-      iframeRef.current.requestFullscreen()
-    } else {
-      document.exitFullscreen()
+      setTopic(result.topic)
+    } catch (error) {
+      setLikeError(error.message || "Failed to update like")
+    } finally {
+      setLikeBusy(false)
     }
   }
 
-  /* ── Manual regenerate handlers (kept for future use) ─────── */
   const createSimulation = async () => {
     setSimulationError(null)
-    setLoading(true)
+    setSimulationLoading(true)
+
     try {
-      await generateSimulationAI(topic._id)
-      setSimulationPath(`${import.meta.env.VITE_API_BASE_URL}/api/simulation/serve/${topic._id}`)
-    } catch (err) {
-      setSimulationError(err.message || "Failed to generate simulation")
+      await generateSimulationAI(id)
+      await loadTopic()
+    } catch (error) {
+      setSimulationError(error.message || "Failed to generate simulation")
     } finally {
-      setLoading(false)
+      setSimulationLoading(false)
     }
   }
 
   const createExplanation = async () => {
     setExplanationError(null)
     setExplanationLoading(true)
+
     try {
-      const result = await generateExplanation(topic._id, i18n.language)
+      const result = await generateExplanation(id, i18n.language)
       setExplanation(result.explanation)
       setHindiExplanation(result.hindiExplanation || "")
-    } catch (err) {
-      setExplanationError(err.message || "Failed to generate explanation")
+      await loadTopic()
+    } catch (error) {
+      setExplanationError(error.message || "Failed to generate explanation")
     } finally {
       setExplanationLoading(false)
     }
   }
 
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const toggleFullscreen = () => {
+    if (!iframeRef.current) {
+      return
+    }
+
+    if (!document.fullscreenElement) {
+      iframeRef.current.requestFullscreen()
+      return
+    }
+
+    document.exitFullscreen()
+  }
+
   const displayedExplanation =
     i18n.language === "hi" && hindiExplanation ? hindiExplanation : explanation
 
-  if (!topic) {
+  const explanationStatus =
+    topic?.generationStatus?.explanation?.status || (explanation ? "completed" : "idle")
+  const explanationStatusError = topic?.generationStatus?.explanation?.error
+  const simulationStatus =
+    topic?.generationStatus?.simulation?.status || (simulationPath ? "completed" : "idle")
+  const simulationStatusError = topic?.generationStatus?.simulation?.error
+
+  if (pageLoading || !topic) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <SimpleSpinner label="Loading topic…" />
+      <div className="flex h-48 items-center justify-center">
+        <SimpleSpinner label="Loading topic..." />
       </div>
     )
   }
 
   return (
-    <div className="relative">
-
-      {topic.level === "advanced" && (
+    <div ref={pageRef} className="relative pb-10">
+      <div className="mb-5 flex items-center justify-between">
         <button
-          onClick={scrollToSimulation}
-          className="fixed bottom-6 right-6 w-12 h-12 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 z-50"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
         >
-          ↓
+          <span aria-hidden="true">←</span>
+          <span>Back</span>
         </button>
-      )}
-
-      <div className="mb-6">
-        <div className="text-sm text-accent">
-          {topic.createdBy?.name || "Unknown"}
-        </div>
-        <h1 className="text-2xl mt-2">{topic.name}</h1>
-        <p className="text-sm opacity-70 mt-1">{topic.level}</p>
       </div>
 
-      {/* ── Explanation section ─────────────────────────────────── */}
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-sm text-accent">
+              {topic.createdBy?.name || "Unknown"}
+            </div>
+            <h1 className="mt-2 text-2xl">{topic.name}</h1>
+            <p className="mt-1 text-sm opacity-70">{topic.level}</p>
+          </div>
+
+          <button
+            onClick={handleLikeToggle}
+            disabled={!user || likeBusy}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
+              topic.isLikedByUser
+                ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-200"
+                : "border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            } ${!user ? "cursor-not-allowed opacity-60" : ""}`}
+            title={user ? "Like this topic" : "Log in to like topics"}
+          >
+            <span aria-hidden="true">{topic.isLikedByUser ? "♥" : "♡"}</span>
+            <span>{formatLikesCount(topic.likesCount || 0)}</span>
+          </button>
+        </div>
+
+        {!user && (
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            Log in to like this topic.
+          </p>
+        )}
+
+        {likeError && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{likeError}</p>
+        )}
+      </div>
+
       <div className="mb-10 leading-7">
-        <div className="flex justify-between items-center mb-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-xl">{t("topic.explanation")}</h2>
-          {/* Retry button shown only when explanation failed */}
-          {!explanation && !explanationLoading && (
+          {!explanation && !explanationLoading && !isActiveStatus(explanationStatus) && (
             <button
               onClick={createExplanation}
-              className="px-3 py-1 bg-primary text-white rounded text-sm"
+              className="rounded bg-primary px-3 py-1 text-sm text-white"
             >
               {t("topic.generateExplanation")}
             </button>
@@ -191,90 +303,113 @@ const TopicDetail = () => {
         </div>
 
         {explanationError && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3 dark:bg-red-900 dark:border-red-700 dark:text-red-200">
+          <div className="mb-3 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-700 dark:bg-red-900 dark:text-red-200">
             <strong>Error:</strong> {explanationError}
             <button
               onClick={createExplanation}
-              className="ml-3 underline text-sm"
+              className="ml-3 text-sm underline"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Loading spinner while auto-generating */}
-        {explanationLoading && (
-          <SimpleSpinner label={t("topic.generating") + " explanation…"} />
+        {(explanationLoading || (!explanation && isActiveStatus(explanationStatus))) && (
+          <SimpleSpinner label={`${t("topic.generating")} explanation...`} />
+        )}
+
+        {!explanation && explanationStatus === "failed" && explanationStatusError && !explanationError && (
+          <div className="mb-3 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-700 dark:bg-red-900 dark:text-red-200">
+            <strong>Error:</strong> {explanationStatusError}
+          </div>
         )}
 
         {explanation && !explanationLoading && (
-          <div className="prose dark:prose-invert max-w-none">
+          <div className="prose max-w-none dark:prose-invert">
             <ReactMarkdown>{displayedExplanation}</ReactMarkdown>
           </div>
         )}
       </div>
 
-      {/* ── Simulation section (advanced topics only) ──────────── */}
       {topic.level === "advanced" && (
-        <div ref={simulationRef}>
-          <div className="flex justify-between items-center mb-3">
+        <div>
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl">{t("topic.simulation")}</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {simulationPath && (
                 <button
                   onClick={toggleFullscreen}
-                  className="px-3 py-1 bg-primary text-white rounded text-sm"
+                  className="rounded bg-primary px-3 py-1 text-sm text-white"
                 >
                   {t("topic.fullscreen")}
-                </button>
-              )}
-              {/* Regenerate button shown only when there's an error or after initial load */}
-              {!loading && simulationPath && (
-                <button
-                  onClick={createSimulation}
-                  className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
-                >
-                  ↻ Regenerate
                 </button>
               )}
             </div>
           </div>
 
           {simulationError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3 dark:bg-red-900 dark:border-red-700 dark:text-red-200">
+            <div className="mb-3 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-700 dark:bg-red-900 dark:text-red-200">
               <strong>Error:</strong> {simulationError}
               <button
                 onClick={createSimulation}
-                className="ml-3 underline text-sm"
+                className="ml-3 text-sm underline"
               >
                 Retry
               </button>
             </div>
           )}
 
-          {/* Loading spinner while auto-generating simulation */}
-          {loading && (
-            <SimpleSpinner label={t("topic.generating") + " simulation…"} />
+          {(simulationLoading || (!simulationPath && isActiveStatus(simulationStatus))) && (
+            <SimpleSpinner label={`${t("topic.generating")} simulation...`} />
           )}
 
-          {/* ── Responsive simulation iframe ─────────────────────── */}
-          {simulationPath && !loading && (
-            <div
-              className="border rounded overflow-hidden w-full"
-              style={{ minHeight: '600px', height: 'calc(100vh - 220px)', maxHeight: '900px' }}
+          {!simulationPath && simulationStatus === "failed" && simulationStatusError && !simulationError && (
+            <div className="mb-3 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-700 dark:bg-red-900 dark:text-red-200">
+              <strong>Error:</strong> {simulationStatusError}
+            </div>
+          )}
+
+          {!simulationPath && !simulationLoading && !isActiveStatus(simulationStatus) && explanation && (
+            <button
+              onClick={createSimulation}
+              className="mb-4 rounded bg-primary px-3 py-1 text-sm text-white"
             >
-              <iframe
-                ref={iframeRef}
-                src={simulationPath}
-                title="Simulation"
-                className="w-full h-full"
-                style={{ border: 'none', display: 'block' }}
-                scrolling="auto"
-              />
+              Generate simulation
+            </button>
+          )}
+
+          {simulationPath && !simulationLoading && (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+              <div className="border-b border-gray-200 px-4 py-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                Interactive simulation optimized for desktop and mobile viewport sizes.
+              </div>
+              <div className="h-[68vh] min-h-[420px] w-full sm:h-[72vh] lg:h-[78vh]">
+                <iframe
+                  ref={iframeRef}
+                  src={simulationPath}
+                  title="Simulation"
+                  className="h-full w-full"
+                  style={{ border: "none", display: "block" }}
+                  scrolling="auto"
+                />
+              </div>
             </div>
           )}
         </div>
       )}
+
+      <div className="fixed bottom-24 left-4 z-50 flex flex-col gap-3 sm:bottom-6 sm:left-6">
+        {showBackToTop && (
+          <button
+            onClick={scrollToTop}
+            className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-red-300 bg-red-700 text-red-700 shadow-[0_10px_24px_rgba(220,38,38,0.18)] transition-all hover:-translate-y-1 hover:bg-red-100 dark:border-red-500/70 dark:bg-red-950/85 dark:text-red-100 dark:hover:bg-red-900"
+            title="Back to top"
+            aria-label="Back to top"
+          >
+            <span className="text-3xl font-black leading-none">⏏</span>
+          </button>
+        )}
+      </div>
     </div>
   )
 }

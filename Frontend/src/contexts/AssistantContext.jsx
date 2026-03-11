@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 const AssistantContext = createContext(null)
 
@@ -8,18 +8,29 @@ export const AssistantProvider = ({ children }) => {
     topicName: null,
     topicLevel: null,
     subjectName: null,
+    topicExplanation: null,
   })
 
-  const updateTopicContext = (ctx) => {
+  const updateTopicContext = useCallback((ctx) => {
     setTopicContext(prev => ({ ...prev, ...ctx }))
-  }
+  }, [])
 
-  const clearTopicContext = () => {
-    setTopicContext({ topicName: null, topicLevel: null, subjectName: null })
-  }
+  const clearTopicContext = useCallback(() => {
+    setTopicContext({
+      topicName: null,
+      topicLevel: null,
+      subjectName: null,
+      topicExplanation: null
+    })
+  }, [])
+
+  const value = useMemo(
+    () => ({ topicContext, updateTopicContext, clearTopicContext }),
+    [topicContext, updateTopicContext, clearTopicContext]
+  )
 
   return (
-    <AssistantContext.Provider value={{ topicContext, updateTopicContext, clearTopicContext }}>
+    <AssistantContext.Provider value={value}>
       {children}
     </AssistantContext.Provider>
   )

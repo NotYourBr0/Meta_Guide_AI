@@ -1,87 +1,166 @@
-import { useEffect, useState } from "react"
-import { useAuth } from "../context/AuthContext"
+import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 const API = import.meta.env.VITE_API_BASE_URL
 
+const normalizeSubjectName = (value = "") =>
+  value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
 const AdminDashboard = () => {
-  const { user } = useAuth()
   const { t } = useTranslation()
   const [data, setData] = useState(null)
   const [editingSubject, setEditingSubject] = useState(null)
   const [editingTopic, setEditingTopic] = useState(null)
+  const [actionError, setActionError] = useState(null)
+  const [snackbar, setSnackbar] = useState("")
 
-  const updateSubject = async () => {
+  const getAuthHeaders = () => {
     const token = localStorage.getItem('token')
-    await fetch(`${API}/api/admin/subject/${editingSubject._id}`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    }
+  }
+
+  const fetchOverview = useCallback(async () => {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API}/api/admin/overview`, {
+      headers: {
         "Authorization": `Bearer ${token}`
       },
-      credentials: "include",
-      body: JSON.stringify({
-        name: editingSubject.name,
-        level: editingSubject.level
-      })
+      credentials: "include"
     })
-    window.location.reload()
+
+    const result = await res.json()
+    if (!res.ok) {
+      throw new Error(result.error || result.message || "Failed to load admin overview")
+    }
+
+    setData(result)
+  }, [])
+
+  const updateSubject = async () => {
+    try {
+      setActionError(null)
+      const duplicateExists = data.subjects.some((subject) =>
+        subject._id !== editingSubject._id &&
+        (subject.university || "RTU") === (editingSubject.university || "RTU") &&
+        Number(subject.semester) === Number(editingSubject.semester) &&
+        normalizeSubjectName(subject.name) === normalizeSubjectName(editingSubject.name)
+      )
+
+      if (duplicateExists) {
+        setSnackbar(
+          `That subject already exists for ${(editingSubject.university || "RTU")} semester ${editingSubject.semester}.`
+        )
+        return
+      }
+
+      const res = await fetch(`${API}/api/admin/subject/${editingSubject._id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          name: editingSubject.name,
+          university: editingSubject.university,
+          semester: Number(editingSubject.semester)
+        })
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to update subject")
+      }
+      setEditingSubject(null)
+      await fetchOverview()
+    } catch (error) {
+      if ((error.message || "").toLowerCase().includes("already exists")) {
+        setSnackbar(error.message)
+      }
+      setActionError(error.message)
+    }
   }
 
   const updateTopic = async () => {
-    const token = localStorage.getItem('token')
-    await fetch(`${API}/api/admin/topic/${editingTopic._id}`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        name: editingTopic.name,
-        level: editingTopic.level
+    try {
+      setActionError(null)
+      const res = await fetch(`${API}/api/admin/topic/${editingTopic._id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          name: editingTopic.name,
+          level: editingTopic.level
+        })
       })
-    })
-    window.location.reload()
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to update topic")
+      }
+      setEditingTopic(null)
+      await fetchOverview()
+    } catch (error) {
+      setActionError(error.message)
+    }
   }
 
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API}/api/admin/overview`, {
+    fetchOverview().catch((error) => {
+      setActionError(error.message)
+    })
+  }, [fetchOverview])
+
+  useEffect(() => {
+    if (!snackbar) {
+      return undefined
+    }
+
+    const timeoutId = setTimeout(() => setSnackbar(""), 3200)
+    return () => clearTimeout(timeoutId)
+  }, [snackbar])
+
+  const deleteSubject = async (id) => {
+    try {
+      setActionError(null)
+      const res = await fetch(`${API}/api/admin/subject/${id}`, {
+        method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
         },
         credentials: "include"
       })
       const result = await res.json()
-      setData(result)
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to delete subject")
+      }
+      await fetchOverview()
+    } catch (error) {
+      setActionError(error.message)
     }
-    fetchData()
-  }, [])
-
-  const deleteSubject = async (id) => {
-    const token = localStorage.getItem('token')
-    await fetch(`${API}/api/admin/subject/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      },
-      credentials: "include"
-    })
-    window.location.reload()
   }
 
   const deleteTopic = async (id) => {
-    const token = localStorage.getItem('token')
-    await fetch(`${API}/api/admin/topic/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      },
-      credentials: "include"
-    })
-    window.location.reload()
+    try {
+      setActionError(null)
+      const res = await fetch(`${API}/api/admin/topic/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('token')}`
+        },
+        credentials: "include"
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        throw new Error(result.error || "Failed to delete topic")
+      }
+      await fetchOverview()
+    } catch (error) {
+      setActionError(error.message)
+    }
   }
 
   if (!data) return (
@@ -95,6 +174,18 @@ const AdminDashboard = () => {
       <h2 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white border-b pb-4">
         {t("admin.title")}
       </h2>
+
+      {snackbar && (
+        <div className="fixed bottom-24 right-4 z-50 max-w-[calc(100vw-2rem)] rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-2xl sm:bottom-6 sm:right-24 sm:max-w-sm dark:bg-slate-100 dark:text-slate-900">
+          {snackbar}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="mb-6 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300">
+          <strong>Error:</strong> {actionError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
@@ -137,11 +228,24 @@ const AdminDashboard = () => {
                     />
                     <select
                       className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-600"
-                      value={editingSubject.level}
-                      onChange={e => setEditingSubject({ ...editingSubject, level: e.target.value })}
+                      value={editingSubject.university || "RTU"}
+                      onChange={e => setEditingSubject({ ...editingSubject, university: e.target.value })}
                     >
-                      <option value="school">{t("subjects.levels.school")}</option>
-                      <option value="university">{t("subjects.levels.university")}</option>
+                      <option value="RTU">RTU</option>
+                    </select>
+                    <select
+                      className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-600"
+                      value={editingSubject.semester || 1}
+                      onChange={e => setEditingSubject({ ...editingSubject, semester: Number(e.target.value) })}
+                    >
+                      <option value="1">Semester 1</option>
+                      <option value="2">Semester 2</option>
+                      <option value="3">Semester 3</option>
+                      <option value="4">Semester 4</option>
+                      <option value="5">Semester 5</option>
+                      <option value="6">Semester 6</option>
+                      <option value="7">Semester 7</option>
+                      <option value="8">Semester 8</option>
                     </select>
                     <div className="flex gap-2 justify-end mt-2">
                       <button 
@@ -162,7 +266,12 @@ const AdminDashboard = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-medium text-gray-800 dark:text-gray-200">{s.name}</div>
-                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">{s.level}</div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">
+                        {(s.university || "RTU")} | Semester {s.semester || "?"}
+                      </div>
+                      {s.courseCode && (
+                        <div className="text-xs text-gray-400 mt-1">{s.courseCode}</div>
+                      )}
                     </div>
                     <div className="flex gap-2 ml-4">
                       <button 

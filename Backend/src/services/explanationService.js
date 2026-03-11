@@ -2,23 +2,34 @@ import fetch from "node-fetch"
 
 export const generateExplanationFromAI = async ({
   subjectName,
-  subjectLevel,
+  subjectUniversity,
+  subjectSemester,
+  subjectCode,
+  syllabusContext,
   topicName,
   topicLevel,
   language
 }) => {
+  const trimmedSyllabusContext = syllabusContext
+    ? syllabusContext.slice(0, 6000)
+    : ""
 
   const prompt =` Generate a structured, well-formatted explanation for the topic.
 
 Subject: ${subjectName}
-Subject Level: ${subjectLevel}
+University: ${subjectUniversity || "Unknown"}
+Semester: ${subjectSemester || "Unknown"}
+Course Code: ${subjectCode || "Unknown"}
 Topic: ${topicName}
 Difficulty: ${topicLevel}
 Language: ${language}
 
 You are an expert ${subjectName} educator.
 
-Write a clear, complete, and well-organized explanation for "${topicName}" in ${subjectName}, adapted to the given subject level and difficulty.
+SYLLABUS CONTEXT:
+${trimmedSyllabusContext || "No syllabus context available."}
+
+Write a clear, complete, and well-organized explanation for "${topicName}" in ${subjectName}, adapted to the official course syllabus and difficulty.
 
 STRUCTURE RULES:
 
@@ -163,6 +174,11 @@ Maintain professional and engaging style.
 OUTPUT GOAL:
 
 Produce a well-structured, attractive, level-appropriate explanation that feels custom-designed for this topic and learner level.
+
+STRICT SYLLABUS ALIGNMENT:
+- Treat the syllabus context above as the course ground truth.
+- Keep the explanation aligned with the official course scope, terminology, and unit structure where relevant.
+- Do not drift into unrelated topics unless clearly marked as optional enrichment.
 `
 
   const apiKey = process.env.EXPLANATION_API_KEY

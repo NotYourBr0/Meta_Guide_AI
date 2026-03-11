@@ -1,7 +1,8 @@
 import express from "express"
+import Subject from "../models/Subject.js"
 import Topic from "../models/Topic.js"
-import { generateSimulationFromAI } from "../services/simulationService.js"
 import { protect } from "../middleware/authMiddleware.js"
+import { generateTopicSimulation } from "../services/topicGenerationService.js"
 
 const router = express.Router()
 
@@ -33,33 +34,26 @@ router.post("/generate-ai/:topicId", protect, async (req, res) => {
       return res.status(400).json({ error: "Explanation required first" })
     }
 
-    const htmlContent = await generateSimulationFromAI({
+    const subject = await Subject.findById(topic.subjectId)
+    if (!subject) {
+      return res.status(404).json({ error: "Subject not found" })
+    }
+
+    await generateTopicSimulation({
+      topicId,
+      subjectName: subject.name,
+      subjectUniversity: subject.university,
+      subjectSemester: subject.semester,
+      subjectCode: subject.courseCode,
+      syllabusContext: subject.syllabusContext,
       topicName: topic.name,
-      explanation: topic.explanation
+      topicLevel: topic.level,
+      explanation: topic.explanation,
+      force: true
     })
 
-    // Block only genuinely dangerous patterns
-    if (
-      !htmlContent ||
-      typeof htmlContent !== "string" ||
-      !htmlContent.includes("<html") ||
-      !htmlContent.includes("<body") ||
-      !htmlContent.includes("<script") ||
-      htmlContent.includes("fetch(") ||
-      htmlContent.includes("XMLHttpRequest")
-    ) {
-      return res.status(400).json({ error: "Invalid or unsafe simulation format" })
-    }
-
-    if (htmlContent.length > 200000) {
-      return res.status(400).json({ error: "Simulation too large" })
-    }
-
-    // Store HTML in MongoDB — survives Render restarts
-    topic.simulationHtml = htmlContent
-    await topic.save()
-
-    res.json({ success: true })
+    const updatedTopic = await Topic.findById(topicId).select("generationStatus simulationHtml")
+    res.json({ success: true, generationStatus: updatedTopic.generationStatus, hasSimulation: !!updatedTopic.simulationHtml })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

@@ -12,11 +12,27 @@ const QUESTION_COUNT = {
  */
 export const generate50QuestionsFromAI = async ({
   subjectName,
+  subjectUniversity,
+  subjectSemester,
+  subjectCode,
+  syllabusContext,
   topicName,
   topicLevel,
   explanation
 }) => {
+  const trimmedSyllabusContext = syllabusContext
+    ? syllabusContext.substring(0, 5000)
+    : ""
+
   const prompt = `You are a ${subjectName} quiz creator. Generate exactly 50 multiple-choice questions for the topic "${topicName}" (${topicLevel} level).
+
+Course context:
+- University: ${subjectUniversity || "Unknown"}
+- Semester: ${subjectSemester || "Unknown"}
+- Course Code: ${subjectCode || "Unknown"}
+
+Official syllabus context:
+${trimmedSyllabusContext || "No syllabus context available."}
 
 Context:
 ${explanation ? explanation.substring(0, 2000) : `${topicName} in ${subjectName}`}
@@ -28,6 +44,9 @@ Rules:
 - Vary difficulty within the 50 questions (easy, medium, hard)
 - Keep each explanation to 1-2 sentences
 - No repeated or very similar questions
+- Treat the syllabus context as the official course boundary
+- Keep questions aligned with the RTU course scope, terminology, and unit coverage
+- Do not drift into outside topics unless they are clearly prerequisite knowledge for this syllabus
 
 Return ONLY a valid JSON array of exactly 50 objects, no markdown, no extra text:
 [{"question":"...","options":["Option text A","Option text B","Option text C","Option text D","Option text E","Option text F"],"correctAnswers":[0],"explanation":"...","isMultiple":false}]
@@ -105,14 +124,28 @@ Generate all 50 questions now:`
 
 export const generateTestQuestionsFromAI = async ({
   subjectName,
-  subjectLevel,
+  subjectUniversity,
+  subjectSemester,
+  subjectCode,
+  syllabusContext,
   topicName,
   topicLevel,
   explanation
 }) => {
   const count = QUESTION_COUNT[topicLevel] || 5
+  const trimmedSyllabusContext = syllabusContext
+    ? syllabusContext.substring(0, 4000)
+    : ""
 
   const prompt = `You are a ${subjectName} quiz creator. Generate exactly ${count} multiple-choice questions for the topic "${topicName}" (${topicLevel} level).
+
+Course context:
+- University: ${subjectUniversity || "Unknown"}
+- Semester: ${subjectSemester || "Unknown"}
+- Course Code: ${subjectCode || "Unknown"}
+
+Official syllabus context:
+${trimmedSyllabusContext || "No syllabus context available."}
 
 Context:
 ${explanation ? explanation.substring(0, 1500) : `${topicName} in ${subjectName}`}
@@ -122,6 +155,7 @@ Rules:
 - Mix single and multiple correct answers
 - Test understanding, not memorization
 - Keep explanations to 1 sentence
+- Stay within the syllabus boundary and course terminology
 
 Return ONLY a valid JSON array, no markdown:
 [{"question":"...","options":["A","B","C","D","E","F"],"correctAnswers":[0],"explanation":"...","isMultiple":false}]

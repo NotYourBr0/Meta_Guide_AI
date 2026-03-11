@@ -2,11 +2,16 @@ import { useState } from "react"
 
 const AddSubjectModal = ({ onClose, onAdd, submitting = false }) => {
   const [name, setName] = useState("")
-  const [level, setLevel] = useState("school")
+  const [university, setUniversity] = useState("RTU")
+  const [semester, setSemester] = useState("1")
 
   const handleSubmit = () => {
     if (!name.trim() || submitting) return
-    onAdd({ name, level })
+    onAdd({
+      name,
+      university,
+      semester: Number(semester)
+    })
   }
 
   return (
@@ -23,12 +28,26 @@ const AddSubjectModal = ({ onClose, onAdd, submitting = false }) => {
         />
 
         <select
-          value={level}
-          onChange={(e) => setLevel(e.target.value)}
+          value={university}
+          onChange={(e) => setUniversity(e.target.value)}
           className="w-full border p-2 mb-4 dark:bg-gray-800"
         >
-          <option value="school">School Level</option>
-          <option value="university">University Level</option>
+          <option value="RTU">RTU</option>
+        </select>
+
+        <select
+          value={semester}
+          onChange={(e) => setSemester(e.target.value)}
+          className="w-full border p-2 mb-4 dark:bg-gray-800"
+        >
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
+          <option value="3">Semester 3</option>
+          <option value="4">Semester 4</option>
+          <option value="5">Semester 5</option>
+          <option value="6">Semester 6</option>
+          <option value="7">Semester 7</option>
+          <option value="8">Semester 8</option>
         </select>
 
         <div className="flex justify-end gap-2">

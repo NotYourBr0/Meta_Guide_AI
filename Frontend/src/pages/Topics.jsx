@@ -5,6 +5,18 @@ import { useTranslation } from "react-i18next"
 import AddTopicModal from "../components/ui/AddTopicModal"
 import { getTopicsBySubject, createTopic } from "../services/api"
 
+const formatLikesCount = (value = 0) => {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(value >= 10000000 ? 0 : 1).replace(/\.0$/, "")}M`
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1).replace(/\.0$/, "")}K`
+  }
+
+  return `${value}`
+}
+
 const Topics = () => {
   const { id } = useParams()
   const location = useLocation()
@@ -16,6 +28,7 @@ const Topics = () => {
   const [topics, setTopics] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [filterLevel, setFilterLevel] = useState("all")
+  const [sortBy, setSortBy] = useState("latest")
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -51,17 +64,33 @@ const Topics = () => {
   }
 
   const filteredTopics = useMemo(() => {
-    return topics.filter(topic => {
+    const filtered = topics.filter(topic => {
       const matchesLevel =
         filterLevel === "all" || topic.level === filterLevel
 
       const matchesSearch =
         topic.name.toLowerCase().includes(search.toLowerCase()) ||
-        topic.createdBy?.name.toLowerCase().includes(search.toLowerCase())
+        (topic.createdBy?.name || "").toLowerCase().includes(search.toLowerCase())
 
       return matchesLevel && matchesSearch
     })
-  }, [topics, filterLevel, search])
+
+    return filtered.sort((left, right) => {
+      if (sortBy === "popular") {
+        return (right.likesCount || 0) - (left.likesCount || 0) || new Date(right.createdAt) - new Date(left.createdAt)
+      }
+
+      if (sortBy === "unpopular") {
+        return (left.likesCount || 0) - (right.likesCount || 0) || new Date(right.createdAt) - new Date(left.createdAt)
+      }
+
+      if (sortBy === "oldest") {
+        return new Date(left.createdAt) - new Date(right.createdAt)
+      }
+
+      return new Date(right.createdAt) - new Date(left.createdAt)
+    })
+  }, [topics, filterLevel, search, sortBy])
 
   if (loading) return <div>{t("topics.loading")}</div>
 
@@ -103,6 +132,17 @@ const Topics = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 dark:bg-gray-800"
           />
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border p-2 dark:bg-gray-800"
+          >
+            <option value="popular">More Popular</option>
+            <option value="unpopular">Less Popular</option>
+            <option value="latest">Latest</option>
+            <option value="oldest">Old</option>
+          </select>
         </div>
       </div>
 
@@ -115,8 +155,13 @@ const Topics = () => {
             }
             className="border p-4 rounded hover:border-primary cursor-pointer"
           >
-            <div className="text-sm text-accent mb-2">
-              {topic.createdBy?.name || t("subjects.unknown")}
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="text-sm text-accent">
+                {topic.createdBy?.name || t("subjects.unknown")}
+              </div>
+              <div className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-600 dark:bg-rose-900/30 dark:text-rose-300">
+                {formatLikesCount(topic.likesCount || 0)} likes
+              </div>
             </div>
             <h3 className="text-lg">{topic.name}</h3>
             <p className="text-sm opacity-70 mt-1">

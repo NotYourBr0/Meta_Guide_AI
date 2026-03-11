@@ -65,10 +65,31 @@ export const getTopicsBySubject = async (subjectId) => {
   return res.json()
 }
 
+export const getTopicById = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/topics/single/${topicId}`, {
+    method: "GET"
+  })
+  return res.json()
+}
+
 export const createTopic = async (data) => {
   const res = await authFetch(`${API_BASE}/api/topics`, {
     method: "POST",
     body: JSON.stringify(data)
+  })
+  return res.json()
+}
+
+export const likeTopic = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/topics/${topicId}/like`, {
+    method: "POST"
+  })
+  return res.json()
+}
+
+export const unlikeTopic = async (topicId) => {
+  const res = await authFetch(`${API_BASE}/api/topics/${topicId}/like`, {
+    method: "DELETE"
   })
   return res.json()
 }

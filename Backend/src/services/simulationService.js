@@ -1,60 +1,106 @@
 import fetch from "node-fetch"
 
 export const generateSimulationFromAI = async ({
+  subjectName,
+  subjectUniversity,
+  subjectSemester,
+  subjectCode,
+  syllabusContext,
   topicName,
+  topicLevel,
   explanation
 }) => {
+  const trimmedExplanation = explanation ? explanation.slice(0, 7000) : ""
+  const trimmedSyllabusContext = syllabusContext ? syllabusContext.slice(0, 4000) : ""
 
-  const prompt = `System Role: Act as an expert Full-Stack Developer and Educational Simulation Designer. Your goal is to create a complete, high-performance, single-file HTML5 simulation.
+  const prompt = `You are an expert educational simulation engineer. Build a serious, polished, single-file HTML5 simulation for one topic.
 
+Subject: ${subjectName || "Unknown"}
+University: ${subjectUniversity || "Unknown"}
+Semester: ${subjectSemester || "Unknown"}
+Course Code: ${subjectCode || "Unknown"}
 Topic: ${topicName}
-Reference Logic: ${explanation}
+Difficulty: ${topicLevel || "advanced"}
 
-CORE ARCHITECTURAL RULES:
+SYLLABUS CONTEXT:
+${trimmedSyllabusContext || "No syllabus context provided."}
 
-Output Format: Return ONLY valid, complete HTML. Start with <!DOCTYPE html> and end with </html>. Do not include markdown wrappers, conversational filler, or code blocks.
+REFERENCE EXPLANATION:
+${trimmedExplanation}
 
-Zero-Dependency Policy: Use only Vanilla JS and the Canvas API. No external libraries, no CDNs (including Tailwind), and no network requests. All styling must be in internal <style> tags.
+GOAL:
+- Create one focused interactive simulation that teaches the core mechanism of "${topicName}".
+- Stay faithful to the provided explanation and syllabus context.
+- Do not generate a generic science-fair dashboard or random decorative widgets.
 
-Math Kernel: Implement a dedicated calculation engine based strictly on the provided Reference Logic. Separate the physics/logic updates from the requestAnimationFrame render loop.
+OUTPUT RULES:
+- Return ONLY complete HTML.
+- Start with <!DOCTYPE html> and end with </html>.
+- No markdown fences, no commentary, no explanations outside the HTML.
+- Include a proper <meta name="viewport" content="width=device-width, initial-scale=1"> tag.
 
-LAYOUT & RESPONSIVENESS (Strict Implementation):
+TECHNICAL RULES:
+- Use only HTML, CSS, and vanilla JavaScript.
+- No external libraries, no CDNs, no network requests, no iframes inside the simulation.
+- Keep all CSS in a <style> tag and all JS in a <script> tag.
+- The code must run fully offline.
 
-Desktop (Min-width: 1024px): * Main Viewport (Left): 75% width. This is the "Hero" area for the <canvas>.
+LAYOUT RULES:
+- The page must fit entirely inside the viewport with no horizontal overflow.
+- Use a root app shell that fills the viewport and uses CSS grid or flex.
+- On desktop, use a two-column layout:
+  1. Simulation stage / canvas area
+  2. Compact control panel
+- On tablet and mobile, stack vertically with the simulation first and the control panel below.
+- The control panel must remain readable and scroll independently if needed.
+- Never let controls overlap the canvas content.
+- Never position panels off-screen.
+- Avoid oversized headers, huge margins, or fixed elements that cover content.
 
-Control Panel (Right): 25% width. Fixed-width sidebar to prevent content squishing.
+RESPONSIVENESS RULES:
+- Use responsive CSS with breakpoints for <= 1024px and <= 640px.
+- Support touch devices.
+- All controls must remain visible and tappable on mobile.
+- The simulation stage must resize with the viewport.
+- Canvas, SVG, charts, and labels must scale within their containers.
+- No clipped labels, no cut-off panels, no hidden critical controls.
 
-Mobile (Below 1024px): * Vertical stack. Viewport on top (60% height), Control Panel on bottom (40% height, scrollable).
+INTERACTION RULES:
+- Include only the controls that actually matter to understanding the topic.
+- Prefer 2 to 5 meaningful controls, not a cluttered wall of sliders.
+- Show live numeric values beside controls.
+- Include a reset button.
+- Add clear labels for inputs and outputs.
+- If the topic benefits from animation, provide play/pause support.
 
-Container: width: 100vw; height: 100vh; overflow: hidden; to ensure a "web app" feel.
+VISUAL RULES:
+- Use a clean professional interface, not neon gimmicks.
+- Use restrained modern colors with strong contrast.
+- Prioritize clarity over decoration.
+- Use concise instructional text only where necessary.
+- Keep the interface academic and product-quality.
 
-UI & VISUAL AESTHETICS:
+SIMULATION QUALITY RULES:
+- The simulation must reflect the actual topic logic from the reference explanation.
+- Separate model/update logic from rendering logic.
+- If formulas are involved, show the currently computed outputs.
+- If motion or geometry is involved, animate it smoothly and keep it stable at different sizes.
+- If the topic is conceptual, build an interactive visualization instead of a static text page.
 
-Theme: Premium Dark Mode.
+ROBUSTNESS RULES:
+- Include CSS reset for box-sizing.
+- Prevent horizontal scrolling.
+- Ensure the page works inside an iframe.
+- Use ResizeObserver or window resize handling so the simulation redraws correctly.
+- Do not rely on absolute positioning unless strictly necessary and bounded by containers.
+- Keep the total HTML size reasonable and the code maintainable.
 
-Background: #0a0a0c | Surface/Cards: #151518 | Accent: #6366f1 (Indigo) or #38bdf8 (Sky).
-
-Interface: Use a minimalist "Glassmorphism" design for overlays. Use monospace fonts (JetBrains Mono or Courier New) for real-time numerical readouts.
-
-Visual-First: Eliminate all static "Text Explanations." The simulation must explain itself through interaction. Use dynamic labels, tooltips, and a "Live Analytics" HUD overlaying the canvas.
-
-INTERACTIVE FEATURES:
-
-Dynamic Controls: Range sliders for ALL variables in the logic.
-
-Real-time Feedback: Sliders must include live value displays. Include "Toggle Switches" for different modes/theories mentioned in the explanation.
-
-Viewport Control: If the topic is spatial, include sliders for Camera Zoom, Rotation, and Pitch to manipulate the Canvas view.
-
-Analytics Card: A small, high-contrast data table within the Control Panel showing real-time outputs of the formulas.
-
-PERFORMANCE VALIDATION:
-
-Must run 100% offline.
-
-Optimized for 60fps rendering with low CPU overhead.
-
-The code must be production-ready, clean, and fully commented internally.`
+FINAL CHECK BEFORE OUTPUT:
+- Verify the HTML is complete.
+- Verify it is responsive.
+- Verify nothing overlaps or gets cut off on mobile or desktop.
+- Verify the simulation can be understood and used without layout breakage.
+- Return only the final HTML.`
 
   const apiKey = process.env.SIMULATION_API_KEY
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`
@@ -71,7 +117,7 @@ The code must be production-ready, clean, and fully commented internally.`
         }]
       }],
       generationConfig: {
-        temperature: 0.4,
+        temperature: 0.3,
         topP: 0.9,
         maxOutputTokens: 8192
       }

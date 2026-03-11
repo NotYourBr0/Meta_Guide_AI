@@ -5,8 +5,8 @@ import Subject from "../models/Subject.js"
 import Test from "../models/Test.js"
 import User from "../models/User.js"
 import QuestionBank from "../models/QuestionBank.js"
-import { generate50QuestionsFromAI } from "../services/testService.js"
 import { protect } from "../middleware/authMiddleware.js"
+import { generateTopicQuestionBank } from "../services/topicGenerationService.js"
 
 const router = express.Router()
 
@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const topics = await Topic.find({}).populate("subjectId", "name level").lean()
+    const topics = await Topic.find({}).populate("subjectId", "name level university semester courseCode").lean()
 
     let userScores = {}
     if (userId) {
@@ -131,20 +131,20 @@ router.post("/generate-bank/:topicId", protect, async (req, res) => {
     const subject = await Subject.findById(topic.subjectId)
     if (!subject) return res.status(404).json({ error: "Subject not found" })
 
-    const questions = await generate50QuestionsFromAI({
+    const questions = await generateTopicQuestionBank({
+      topicId,
       subjectName: subject.name,
+      subjectUniversity: subject.university,
+      subjectSemester: subject.semester,
+      subjectCode: subject.courseCode,
+      syllabusContext: subject.syllabusContext,
       topicName: topic.name,
       topicLevel: topic.level,
-      explanation: topic.explanation
+      explanation: topic.explanation,
+      force: true
     })
 
     // Upsert question bank
-    await QuestionBank.findOneAndUpdate(
-      { topicId },
-      { questions, generatedAt: new Date() },
-      { upsert: true, new: true }
-    )
-
     res.json({
       success: true,
       totalGenerated: questions.length,

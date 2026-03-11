@@ -5,6 +5,7 @@ const router = express.Router()
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
 const GROQ_MODEL    = 'llama-3.3-70b-versatile'
+const MAX_EXPLANATION_CONTEXT_CHARS = 6000
 
 /**
  * POST /api/assistant/chat
@@ -18,7 +19,7 @@ router.post('/chat', async (req, res) => {
       return res.status(500).json({ error: 'GROQ_API_KEY is not configured on the server.' })
     }
 
-    const { messages = [], topicName, topicLevel, subjectName } = req.body
+    const { messages = [], topicName, topicLevel, subjectName, topicExplanation } = req.body
 
     // ── Build context-aware system instruction ────────────────────────────────
     const contextParts = []
@@ -30,6 +31,14 @@ router.post('/chat', async (req, res) => {
     const contextLine = contextParts.length
       ? `The user is currently studying — ${contextParts.join(', ')}.`
       : 'The user is browsing the MetaGuide AI learning platform.'
+
+    const trimmedExplanation = typeof topicExplanation === 'string'
+      ? topicExplanation.trim().slice(0, MAX_EXPLANATION_CONTEXT_CHARS)
+      : ''
+
+    const explanationContext = trimmedExplanation
+      ? `\nCurrent topic explanation/reference notes:\n"""\n${trimmedExplanation}\n"""\nUse this as the ground truth for topic-specific answers in this chat.`
+      : ''
 
     const difficultyGuidance =
       topicLevel === 'beginner'
@@ -62,7 +71,7 @@ Format your responses cleanly:
 - Use \`code blocks\` for any code
 - Keep paragraphs short (2-3 lines max)
 
-Remember: you're their study buddy, not their professor. Make learning fun!`
+Remember: you're their study buddy, not their professor. Make learning fun!${explanationContext}`
 
     // ── Build Groq-compatible messages array ──────────────────────────────────
     const groqMessages = [

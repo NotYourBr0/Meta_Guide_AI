@@ -141,6 +141,7 @@ const AIAssistant = () => {
           topicName: topicContext.topicName,
           topicLevel: topicContext.topicLevel,
           subjectName: topicContext.subjectName,
+          topicExplanation: topicContext.topicName ? topicContext.topicExplanation : null,
         })
       })
 
