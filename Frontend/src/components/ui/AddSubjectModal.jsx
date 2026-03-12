@@ -1,54 +1,56 @@
 import { useState } from "react"
+import { RTU_BRANCH_OPTIONS } from "../../constants/rtu"
 
 const AddSubjectModal = ({ onClose, onAdd, submitting = false }) => {
   const [name, setName] = useState("")
   const [university, setUniversity] = useState("RTU")
-  const [semester, setSemester] = useState("1")
+  const [branch, setBranch] = useState("Computer Science & Engineering")
 
   const handleSubmit = () => {
     if (!name.trim() || submitting) return
     onAdd({
       name,
       university,
-      semester: Number(semester)
+      branch
     })
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-darkbg p-6 rounded w-80">
-        <h2 className="text-lg mb-4">Add Subject</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-darkbg">
+        <h2 className="mb-4 text-lg font-semibold">Add Subject</h2>
 
         <input
           type="text"
           placeholder="Subject name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full border p-2 mb-3 dark:bg-gray-800"
+          className="mb-3 w-full rounded-lg border p-2.5 dark:bg-gray-800"
         />
 
         <select
           value={university}
           onChange={(e) => setUniversity(e.target.value)}
-          className="w-full border p-2 mb-4 dark:bg-gray-800"
+          className="mb-3 w-full rounded-lg border p-2.5 dark:bg-gray-800"
         >
           <option value="RTU">RTU</option>
         </select>
 
         <select
-          value={semester}
-          onChange={(e) => setSemester(e.target.value)}
-          className="w-full border p-2 mb-4 dark:bg-gray-800"
+          value={branch}
+          onChange={(e) => setBranch(e.target.value)}
+          className="mb-3 w-full rounded-lg border p-2.5 dark:bg-gray-800"
         >
-          <option value="1">Semester 1</option>
-          <option value="2">Semester 2</option>
-          <option value="3">Semester 3</option>
-          <option value="4">Semester 4</option>
-          <option value="5">Semester 5</option>
-          <option value="6">Semester 6</option>
-          <option value="7">Semester 7</option>
-          <option value="8">Semester 8</option>
+          {RTU_BRANCH_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
         </select>
+
+        <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+          Semester will be identified automatically from the matched RTU syllabus.
+        </div>
 
         <div className="flex justify-end gap-2">
           <button

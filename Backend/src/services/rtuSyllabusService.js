@@ -4,22 +4,82 @@ import { fileURLToPath } from "url"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const APP_ROOT = path.join(__dirname, "../../..")
 
-const SYLLABUS_DIR = path.join(__dirname, "../../public/RTU Syllabus")
-const MAX_CONTEXT_CHARS = 7000
+const MAX_CONTEXT_CHARS = 9000
 
-const SEMESTER_FILE_MAP = {
-  1: "1st & 2nd Sem.txt",
-  2: "1st & 2nd Sem.txt",
-  3: "3rd & 4th Sem.txt",
-  4: "3rd & 4th Sem.txt",
-  5: "5th & 6th Sem.txt",
-  6: "5th & 6th Sem.txt",
-  7: "7th & 8th Sem.txt",
-  8: "7th & 8th Sem.txt"
+export const RTU_BRANCHES = [
+  "Computer Science & Engineering",
+  "Artificial Intelligence",
+  "Civil Engineering",
+  "Electrical & Electronic Engineering",
+  "Mechanical Engineering"
+]
+
+const createLookupError = (message, statusCode = 400, suggestions = []) => {
+  const error = new Error(message)
+  error.statusCode = statusCode
+  error.suggestions = suggestions
+  return error
 }
 
-const SEMESTER_ROMAN = {
+const COMMON_FIRST_YEAR_FILE = path.join(APP_ROOT, "Backend/public/RTU Syllabus/1st & 2nd Sem.md")
+const COMMON_FOURTH_YEAR_FILE = path.join(APP_ROOT, "7th & 8th Sem.md")
+
+const FILE_MAP = {
+  "Computer Science & Engineering": {
+    1: COMMON_FIRST_YEAR_FILE,
+    2: COMMON_FIRST_YEAR_FILE,
+    3: path.join(APP_ROOT, "Backend/public/RTU Syllabus/3rd & 4th Sem.md"),
+    4: path.join(APP_ROOT, "Backend/public/RTU Syllabus/3rd & 4th Sem.md"),
+    5: path.join(APP_ROOT, "Backend/public/RTU Syllabus/5th & 6th Sem.md"),
+    6: path.join(APP_ROOT, "Backend/public/RTU Syllabus/5th & 6th Sem.md"),
+    7: COMMON_FOURTH_YEAR_FILE,
+    8: COMMON_FOURTH_YEAR_FILE
+  },
+  "Artificial Intelligence": {
+    1: COMMON_FIRST_YEAR_FILE,
+    2: COMMON_FIRST_YEAR_FILE,
+    3: path.join(APP_ROOT, "AI/2nd year 3 sem.md"),
+    4: path.join(APP_ROOT, "AI/2nd year 4 sem.md"),
+    5: path.join(APP_ROOT, "AI/3year 5 or 6 sem.md"),
+    6: path.join(APP_ROOT, "AI/3year 5 or 6 sem.md"),
+    7: COMMON_FOURTH_YEAR_FILE,
+    8: COMMON_FOURTH_YEAR_FILE
+  },
+  "Civil Engineering": {
+    1: COMMON_FIRST_YEAR_FILE,
+    2: COMMON_FIRST_YEAR_FILE,
+    3: path.join(APP_ROOT, "Civil Engineering/2nd year 3sem.md"),
+    4: path.join(APP_ROOT, "Civil Engineering/2nd year 4sem.md"),
+    5: path.join(APP_ROOT, "Civil Engineering/CE 3rd year 5th & 6th Sem.md"),
+    6: path.join(APP_ROOT, "Civil Engineering/CE 3rd year 5th & 6th Sem.md"),
+    7: COMMON_FOURTH_YEAR_FILE,
+    8: COMMON_FOURTH_YEAR_FILE
+  },
+  "Electrical & Electronic Engineering": {
+    1: COMMON_FIRST_YEAR_FILE,
+    2: COMMON_FIRST_YEAR_FILE,
+    3: path.join(APP_ROOT, "Electrical & Electronic Engineering/EEE 3rd Sem.md"),
+    4: path.join(APP_ROOT, "Electrical & Electronic Engineering/EEE 4th sem.md"),
+    5: path.join(APP_ROOT, "Electrical & Electronic Engineering/EEE 5th & 6th Sem.md"),
+    6: path.join(APP_ROOT, "Electrical & Electronic Engineering/EEE 5th & 6th Sem.md"),
+    7: COMMON_FOURTH_YEAR_FILE,
+    8: COMMON_FOURTH_YEAR_FILE
+  },
+  "Mechanical Engineering": {
+    1: COMMON_FIRST_YEAR_FILE,
+    2: COMMON_FIRST_YEAR_FILE,
+    3: path.join(APP_ROOT, "Mechanical Engineering/2nd year 3sem.md"),
+    4: path.join(APP_ROOT, "Mechanical Engineering/2nd year 4sem .md"),
+    5: path.join(APP_ROOT, "Mechanical Engineering/3 rd year.md"),
+    6: path.join(APP_ROOT, "Mechanical Engineering/3 rd year.md"),
+    7: COMMON_FOURTH_YEAR_FILE,
+    8: COMMON_FOURTH_YEAR_FILE
+  }
+}
+
+const ROMAN_BY_SEMESTER = {
   1: "I",
   2: "II",
   3: "III",
@@ -39,6 +99,52 @@ const normalizeText = (value = "") =>
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+
+const normalizeCourseCode = (value = "") =>
+  value
+    .replace(/\s+/g, " ")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim()
+
+const isLikelyCourseCode = (value = "") =>
+  /^\d[A-Z0-9]*(?:-\d+)?(?:\s*\/\s*\d[A-Z0-9]*(?:-\d+)?)*$/i.test(
+    normalizeCourseCode(value)
+  )
+
+const cleanCourseName = (value = "") =>
+  value
+    .replace(/^[A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s*[-—–:]\s*/i, "")
+    .replace(/\s*\(UNIT[- ]WISE\)\s*$/i, "")
+    .replace(/\s*[—-]\s*Credit:.*$/i, "")
+    .trim()
+
+const resolveCourseName = (value = "") =>
+  value
+    .replace(/^\d[A-Z0-9/ -]*[A-Z0-9]\s*[-—–:]\s*/i, "")
+    .replace(/\s*\(UNIT[- ]WISE\)\s*$/i, "")
+    .replace(/\s*[-—–]\s*Credit:.*$/i, "")
+    .trim()
+
+export const normalizeBranchName = (value = "") => {
+  const normalizedValue = normalizeText(value)
+
+  const aliases = new Map([
+    ["computer science engineering", "Computer Science & Engineering"],
+    ["computer science and engineering", "Computer Science & Engineering"],
+    ["cse", "Computer Science & Engineering"],
+    ["artificial intelligence", "Artificial Intelligence"],
+    ["ai", "Artificial Intelligence"],
+    ["civil engineering", "Civil Engineering"],
+    ["mechanical engineering", "Mechanical Engineering"],
+    ["electrical and electronic engineering", "Electrical & Electronic Engineering"],
+    ["electrical and electronics engineering", "Electrical & Electronic Engineering"],
+    ["electrical electronic engineering", "Electrical & Electronic Engineering"],
+    ["electrical electronics engineering", "Electrical & Electronic Engineering"],
+    ["eee", "Electrical & Electronic Engineering"]
+  ])
+
+  return aliases.get(normalizedValue) || null
+}
 
 const levenshteinDistance = (left = "", right = "") => {
   if (left === right) {
@@ -78,7 +184,6 @@ const levenshteinDistance = (left = "", right = "") => {
 
 const similarityScore = (left = "", right = "") => {
   const maxLength = Math.max(left.length, right.length)
-
   if (!maxLength) {
     return 1
   }
@@ -88,17 +193,41 @@ const similarityScore = (left = "", right = "") => {
 
 const extractCourseCode = (blockText = "") => {
   const patterns = [
-    /Course Code:\**\s*([A-Z0-9/-]+)/i,
-    /^## COURSE:\s*([A-Z0-9-]+)/im,
-    /^###\s*([A-Z0-9/-]+):/im,
-    /^\d+\.\s+\*\*([A-Z0-9-]+)\s+[—-]/im,
-    /^-\s*([0-9A-Z/ -]+):\s+/im
+    /Course Code:\**\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])/i,
+    /- Course code:\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])/i,
+    /^## COURSE:\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*[-—–:]/im,
+    /^###\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*:/im,
+    /^\d+\.\s+\*\*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s+[-—–]/im,
+    /^-\s*([0-9][0-9A-Z/ -]*[A-Z0-9]):\s+/im
   ]
 
   for (const pattern of patterns) {
     const match = blockText.match(pattern)
     if (match) {
-      return match[1].trim()
+      const candidate = normalizeCourseCode(match[1])
+      if (isLikelyCourseCode(candidate)) {
+        return candidate
+      }
+    }
+  }
+
+  return ""
+}
+
+const extractCourseName = (blockText = "") => {
+  const patterns = [
+    /- \*\*Course Name:\*\*\s*(.+)/i,
+    /- Course name:\s*(.+)/i,
+    /^## COURSE:\s*[A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s*[-—–:]\s*(.+)$/im,
+    /^###\s*[A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s*:\s*(.+)$/im,
+    /^\d+\.\s+\*\*[A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s+[-—–]\s*(.+?)\*\*/im,
+    /^-\s*[0-9][0-9A-Z/ -]*[A-Z0-9]:\s*(.+)$/im
+  ]
+
+  for (const pattern of patterns) {
+    const match = blockText.match(pattern)
+    if (match) {
+      return resolveCourseName(match[1].trim())
     }
   }
 
@@ -109,8 +238,11 @@ const extractSemesterLabel = (blockText = "", fallback = "") => {
   const patterns = [
     /- \*\*Semester:\*\*\s*(.+)/i,
     /- Semester:\s*(.+)/i,
-    /## .*?([IVX]+ Semester.*?)$/im,
-    /## .*?(I & II|III Semester|IV Semester|V|VI|VII Semester|VIII Semester)/im
+    /^#+\s*(SEMESTER\s+[IVX]+.*?)$/im,
+    /^#+\s*(.*?[IVX]+\s+Semester.*?)$/im,
+    /^#+\s*(.*?I\s*&\s*II.*?)$/im,
+    /^#+\s*(.*?V\s*&\s*VI.*?)$/im,
+    /^#+\s*(.*?VII\s*&\s*VIII.*?)$/im
   ]
 
   for (const pattern of patterns) {
@@ -146,9 +278,10 @@ const scoreMatch = (inputName, courseName) => {
   const courseTokens = normalizedCourse.split(" ")
 
   const tokenSimilarityTotal = inputTokens.reduce((total, token) => {
-    const bestTokenSimilarity = courseTokens.reduce((best, courseToken) => {
-      return Math.max(best, similarityScore(token, courseToken))
-    }, 0)
+    const bestTokenSimilarity = courseTokens.reduce(
+      (best, courseToken) => Math.max(best, similarityScore(token, courseToken)),
+      0
+    )
 
     if (bestTokenSimilarity < 0.82) {
       return total
@@ -169,27 +302,58 @@ const scoreMatch = (inputName, courseName) => {
 }
 
 const semesterMatches = (entry, semester) => {
+  const courseCodeSemesters = Array.from(
+    (entry.courseCode || "").matchAll(/(?:^|\/\s*)([1-8])(?=[A-Z])/g),
+    (match) => Number(match[1])
+  )
+
+  if (courseCodeSemesters.includes(semester)) {
+    return true
+  }
+
   if (!entry.semesterLabel) {
     return true
   }
 
-  const semesterText = entry.semesterLabel.toLowerCase()
-  const roman = SEMESTER_ROMAN[semester]?.toLowerCase()
+  const semesterText = normalizeText(entry.semesterLabel)
+  const roman = normalizeText(ROMAN_BY_SEMESTER[semester])
+  const numeric = String(semester)
 
   if (!roman) {
     return false
   }
 
-  if (semesterText.includes(`${roman} &`) || semesterText.includes(`& ${roman}`)) {
+  if (
+    semesterText.includes(`semester ${roman}`) ||
+    semesterText.includes(`${roman} semester`) ||
+    semesterText.includes(`semester ${numeric}`) ||
+    semesterText.includes(`${numeric} semester`) ||
+    semesterText === roman ||
+    new RegExp(`^${roman}(\\b|\\s)`).test(semesterText) ||
+    new RegExp(`^${numeric}(\\b|\\s)`).test(semesterText) ||
+    semesterText.endsWith(` ${roman}`) ||
+    semesterText.includes(`${roman} and`) ||
+    semesterText.includes(`and ${roman}`) ||
+    semesterText.includes(`year ${roman}`) ||
+    semesterText.includes(`${roman} year`)
+  ) {
     return true
   }
 
-  if (semesterText.includes(`${roman} semester`) || semesterText.includes(`semester ${roman}`)) {
-    return true
+  if (semester === 1 || semester === 2) {
+    return semesterText.includes("i and ii")
   }
 
-  if (semesterText === roman || semesterText.endsWith(` ${roman}`)) {
-    return true
+  if (semester === 3 || semester === 4) {
+    return semesterText.includes("iii and iv")
+  }
+
+  if (semester === 5 || semester === 6) {
+    return semesterText.includes("v and vi")
+  }
+
+  if (semester === 7 || semester === 8) {
+    return semesterText.includes("vii and viii")
   }
 
   return false
@@ -197,11 +361,80 @@ const semesterMatches = (entry, semester) => {
 
 const getHeadingMatch = (line) => {
   const patterns = [
-    { pattern: /^### Course:\s*(.+)$/i, parse: (match) => ({ courseName: match[1].trim(), courseCode: "" }) },
-    { pattern: /^###\s*([A-Z0-9/-]+):\s*(.+)$/i, parse: (match) => ({ courseCode: match[1].trim(), courseName: match[2].trim() }) },
-    { pattern: /^## COURSE:\s*([A-Z0-9-]+)\s+[—-]\s*(.+)$/i, parse: (match) => ({ courseCode: match[1].trim(), courseName: match[2].trim() }) },
-    { pattern: /^\d+\.\s+\*\*([A-Z0-9-]+)\s+[—-]\s*(.+?)\*\*/i, parse: (match) => ({ courseCode: match[1].trim(), courseName: match[2].trim() }) },
-    { pattern: /^-\s*([0-9A-Z/ -]+):\s*(.+)$/i, parse: (match) => ({ courseCode: match[1].trim(), courseName: match[2].trim() }) }
+    {
+      pattern: /^# SUBJECT \d+$/i,
+      parse: () => ({ courseName: "", courseCode: "" })
+    },
+    {
+      pattern: /^# SUBJECT \d+:\s*(.+)$/i,
+      parse: (match) => ({ courseName: match[1].trim(), courseCode: "" })
+    },
+    {
+      pattern: /^## COURSE \d+$/i,
+      parse: () => ({ courseName: "", courseCode: "" })
+    },
+    {
+      pattern: /^## COURSE \d+:\s*(.+)$/i,
+      parse: (match) => ({ courseName: match[1].trim(), courseCode: "" })
+    },
+    {
+      pattern: /^## COURSE \d+\s*\([^)]*\)$/i,
+      parse: () => ({ courseName: "", courseCode: "" })
+    },
+    {
+      pattern: /^## COURSE \d+\s*\([^)]*\):\s*(.+)$/i,
+      parse: (match) => ({ courseName: match[1].trim(), courseCode: "" })
+    },
+    {
+      pattern: /^## Course:\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*:\s*(.+)$/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    },
+    {
+      pattern: /^## Course:\s*(?![A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s*[-—–:])(.+)$/i,
+      parse: (match) => ({ courseName: match[1].trim(), courseCode: "" })
+    },
+    {
+      pattern: /^### Course:\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*:\s*(.+)$/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    },
+    {
+      pattern: /^### Course:\s*(?![A-Z0-9][A-Z0-9/ -]*[A-Z0-9]\s*[-—–:])(.+)$/i,
+      parse: (match) => ({ courseName: match[1].trim(), courseCode: "" })
+    },
+    {
+      pattern: /^###\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*:\s*(.+)$/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    },
+    {
+      pattern: /^## COURSE:\s*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s*[-—–]\s*(.+)$/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    },
+    {
+      pattern: /^\d+\.\s+\*\*([A-Z0-9][A-Z0-9/ -]*[A-Z0-9])\s+[-—–]\s*(.+?)\*\*/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    },
+    {
+      pattern: /^-\s*([0-9][0-9A-Z/ -]*[A-Z0-9]):\s*(.+)$/i,
+      parse: (match) => ({
+        courseCode: normalizeCourseCode(match[1]),
+        courseName: match[2].trim()
+      })
+    }
   ]
 
   for (const { pattern, parse } of patterns) {
@@ -214,12 +447,15 @@ const getHeadingMatch = (line) => {
   return null
 }
 
-const parseSemesterFile = (fileName) => {
-  if (fileCache.has(fileName)) {
-    return fileCache.get(fileName)
+const parseSemesterFile = (filePath) => {
+  if (fileCache.has(filePath)) {
+    return fileCache.get(filePath)
   }
 
-  const filePath = path.join(SYLLABUS_DIR, fileName)
+  if (!fs.existsSync(filePath)) {
+    throw createLookupError(`Configured syllabus file is missing: ${path.basename(filePath)}`, 500)
+  }
+
   const content = fs.readFileSync(filePath, "utf8")
   const lines = content.split(/\r?\n/)
   const headings = []
@@ -228,10 +464,10 @@ const parseSemesterFile = (fileName) => {
   lines.forEach((line, index) => {
     const trimmed = line.trim()
 
-    if (/^## .*Semester/i.test(trimmed)) {
+    if (/^#+ .*semester/i.test(trimmed)) {
       activeSemesterLabel = trimmed
     } else {
-      const semesterLine = trimmed.match(/^- \*\*Semester:\*\*\s*(.+)$/i)
+      const semesterLine = trimmed.match(/^- \*\*Semester:\*\*\s*(.+)$/i) || trimmed.match(/^- Semester:\s*(.+)$/i)
       if (semesterLine) {
         activeSemesterLabel = semesterLine[1].trim()
       }
@@ -247,20 +483,25 @@ const parseSemesterFile = (fileName) => {
     }
   })
 
-  const parsedEntries = headings.map((heading, idx) => {
-    const nextIndex = headings[idx + 1]?.index ?? lines.length
+  const parsedEntries = headings.map((heading, index) => {
+    const nextIndex = headings[index + 1]?.index ?? lines.length
     const blockText = lines.slice(heading.index, nextIndex).join("\n").trim()
-    const semesterLabel = extractSemesterLabel(blockText, heading.semesterLabel)
+    const extractedCourseName = extractCourseName(blockText)
+    const resolvedCourseName = resolveCourseName(extractedCourseName || heading.courseName)
+    const resolvedCourseCode = isLikelyCourseCode(heading.courseCode)
+      ? heading.courseCode
+      : extractCourseCode(blockText)
 
     return {
-      courseName: heading.courseName,
-      courseCode: heading.courseCode || extractCourseCode(blockText),
-      semesterLabel,
-      sourceFile: fileName,
+      courseName: resolvedCourseName,
+      courseCode: resolvedCourseCode,
+      semesterLabel: extractSemesterLabel(blockText, heading.semesterLabel),
+      sourceFile: path.basename(filePath),
+      sourcePath: filePath,
       content: blockText,
-      normalizedName: normalizeText(heading.courseName)
+      normalizedName: normalizeText(resolvedCourseName)
     }
-  })
+  }).filter((entry) => entry.courseName && isLikelyCourseCode(entry.courseCode))
 
   const dedupedEntries = []
   const seen = new Map()
@@ -275,39 +516,194 @@ const parseSemesterFile = (fileName) => {
   })
 
   seen.forEach((entry) => dedupedEntries.push(entry))
-  fileCache.set(fileName, dedupedEntries)
+  fileCache.set(filePath, dedupedEntries)
 
   return dedupedEntries
 }
 
-export const findRtuSubjectMatch = ({ subjectName, semester }) => {
-  const semesterNumber = Number(semester)
-  const fileName = SEMESTER_FILE_MAP[semesterNumber]
+const getBranchSemesterEntries = (branch, semester) => {
+  const filePath = FILE_MAP[branch]?.[semester]
 
-  if (!fileName) {
-    throw new Error("Invalid semester for RTU syllabus lookup")
+  if (!filePath) {
+    throw createLookupError(`No RTU syllabus source is configured for ${branch}, semester ${semester}.`)
   }
 
-  const entries = parseSemesterFile(fileName).filter((entry) =>
-    semesterMatches(entry, semesterNumber)
+  const entries = parseSemesterFile(filePath).filter((entry) =>
+    semesterMatches(entry, semester)
   )
 
-  const bestMatch = entries
-    .map((entry) => ({
+  if (!entries.length) {
+    throw createLookupError(
+      `RTU syllabus source "${path.basename(filePath)}" does not contain valid semester ${semester} entries for ${branch}.`
+    )
+  }
+
+  return entries
+}
+
+const buildSemesterCandidateMap = (branch, semestersToSearch) => {
+  const candidateMap = new Map()
+
+  semestersToSearch.forEach((semester) => {
+    const entries = getBranchSemesterEntries(branch, semester)
+
+    entries.forEach((entry) => {
+      const key = `${entry.courseCode}::${entry.normalizedName}`
+      const existing = candidateMap.get(key)
+
+      if (existing) {
+        existing.semesters.add(semester)
+        if (entry.content.length > existing.entry.content.length) {
+          existing.entry = entry
+        }
+        return
+      }
+
+      candidateMap.set(key, {
+        entry,
+        semesters: new Set([semester])
+      })
+    })
+  })
+
+  return candidateMap
+}
+
+const getSortedBranchMatches = ({ subjectName, semester, branch }) => {
+  const hasExplicitSemester = semester !== undefined && semester !== null && semester !== ""
+  const semesterNumber = hasExplicitSemester ? Number(semester) : null
+  const normalizedBranch = normalizeBranchName(branch || "Computer Science & Engineering")
+
+  if (!normalizedBranch) {
+    throw createLookupError("Invalid RTU branch selection")
+  }
+
+  if (hasExplicitSemester && (!Number.isInteger(semesterNumber) || semesterNumber < 1 || semesterNumber > 8)) {
+    throw createLookupError("Invalid semester for RTU syllabus lookup")
+  }
+
+  const semestersToSearch = hasExplicitSemester
+    ? [semesterNumber]
+    : [1, 2, 3, 4, 5, 6, 7, 8]
+
+  const candidates = Array.from(buildSemesterCandidateMap(normalizedBranch, semestersToSearch).values())
+
+  const sortedMatches = candidates
+    .map(({ entry, semesters }) => ({
       ...entry,
+      semesters: Array.from(semesters).sort((left, right) => left - right),
       score: scoreMatch(subjectName, entry.courseName)
     }))
-    .sort((a, b) => b.score - a.score)[0]
+    .sort((left, right) => right.score - left.score)
 
+  return {
+    normalizedBranch,
+    hasExplicitSemester,
+    sortedMatches
+  }
+}
+
+const getSuggestionList = (sortedMatches, limit = 3) => {
+  const suggestions = []
+
+  sortedMatches.forEach((match) => {
+    if (suggestions.length >= limit || match.score < 45) {
+      return
+    }
+
+    const alreadyIncluded = suggestions.some((suggestion) =>
+      suggestion.courseCode === match.courseCode || suggestion.courseName === match.courseName
+    )
+
+    if (alreadyIncluded) {
+      return
+    }
+
+    suggestions.push({
+      courseName: match.courseName,
+      courseCode: match.courseCode,
+      semester: match.semesters[0]
+    })
+  })
+
+  return suggestions
+}
+
+const formatSuggestionsSuffix = (suggestions = []) => {
+  if (!suggestions.length) {
+    return ""
+  }
+
+  const formatted = suggestions
+    .map((suggestion) => `${suggestion.courseName} (${suggestion.courseCode || "No code"}, Semester ${suggestion.semester})`)
+    .join(", ")
+
+  return ` Suggestions: ${formatted}.`
+}
+
+const isGenericSuggestion = (courseName = "") => {
+  const normalizedName = normalizeText(courseName)
+
+  return (
+    normalizedName.length < 6 ||
+    normalizedName === "project" ||
+    normalizedName === "seminar" ||
+    normalizedName.includes("open elective") ||
+    normalizedName.includes("industrial training") ||
+    normalizedName.includes("social outreach") ||
+    normalizedName.includes("extra curricular")
+  )
+}
+
+export const getRtuSubjectSuggestions = ({ subjectName, semester, branch, limit = 3 }) => {
+  const { sortedMatches } = getSortedBranchMatches({ subjectName, semester, branch })
+  return getSuggestionList(
+    sortedMatches.filter((match) => !isGenericSuggestion(match.courseName) && match.score >= 55),
+    limit
+  )
+}
+
+export const findRtuSubjectMatch = ({ subjectName, semester, branch }) => {
+  const { normalizedBranch, hasExplicitSemester, sortedMatches } = getSortedBranchMatches({
+    subjectName,
+    semester,
+    branch
+  })
+
+  const bestMatch = sortedMatches[0]
   if (!bestMatch || bestMatch.score < 65) {
     return null
   }
 
+  const competingMatch = sortedMatches[1]
+  const suggestions = getSuggestionList(
+    sortedMatches.filter((match) => !isGenericSuggestion(match.courseName) && match.score >= 55)
+  )
+
+  if (
+    !hasExplicitSemester &&
+    competingMatch &&
+    bestMatch.score >= 80 &&
+    competingMatch.score >= 80 &&
+    bestMatch.score - competingMatch.score <= 2 &&
+    bestMatch.normalizedName !== competingMatch.normalizedName
+  ) {
+    throw createLookupError(
+      `Subject name "${subjectName}" is ambiguous in RTU ${normalizedBranch}. Use a more official subject name.${formatSuggestionsSuffix(suggestions)}`,
+      400,
+      suggestions
+    )
+  }
+
+  const inferredSemester = bestMatch.semesters[0]
+
   return {
     university: "RTU",
-    semester: semesterNumber,
+    branch: normalizedBranch,
+    semester: inferredSemester,
     courseName: bestMatch.courseName,
     courseCode: bestMatch.courseCode,
+    syllabusContent: bestMatch.content,
     syllabusContext: bestMatch.content.slice(0, MAX_CONTEXT_CHARS),
     syllabusSourceFile: bestMatch.sourceFile
   }

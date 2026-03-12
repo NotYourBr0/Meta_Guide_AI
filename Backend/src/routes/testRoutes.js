@@ -37,7 +37,7 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const topics = await Topic.find({}).populate("subjectId", "name level university semester courseCode").lean()
+    const topics = await Topic.find({}).populate("subjectId", "name level university branch semester courseCode").lean()
 
     let userScores = {}
     if (userId) {
@@ -134,10 +134,11 @@ router.post("/generate-bank/:topicId", protect, async (req, res) => {
     const questions = await generateTopicQuestionBank({
       topicId,
       subjectName: subject.name,
+      subjectBranch: subject.branch,
       subjectUniversity: subject.university,
       subjectSemester: subject.semester,
       subjectCode: subject.courseCode,
-      syllabusContext: subject.syllabusContext,
+      syllabusContext: subject.syllabusContent || subject.syllabusContext,
       topicName: topic.name,
       topicLevel: topic.level,
       explanation: topic.explanation,

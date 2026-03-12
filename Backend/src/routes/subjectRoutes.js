@@ -1,7 +1,7 @@
 import express from "express"
 import Subject from "../models/Subject.js"
 import { protect } from "../middleware/authMiddleware.js"
-import { findRtuSubjectMatch } from "../services/rtuSyllabusService.js"
+import { findRtuSubjectMatch, getRtuSubjectSuggestions } from "../services/rtuSyllabusService.js"
 import { normalizeSubjectName } from "../utils/subjectNameUtils.js"
 
 const router = express.Router()
@@ -9,10 +9,10 @@ const router = express.Router()
 // Create subject
 router.post("/", protect, async (req, res) => {
   try {
-    const { name, university, semester } = req.body
+    const { name, university, branch } = req.body
 
-    if (!name || !university || !semester) {
-      return res.status(400).json({ error: "Name, university, and semester are required" })
+    if (!name || !university || !branch) {
+      return res.status(400).json({ error: "Name, university, and branch are required" })
     }
 
     if (university !== "RTU") {
@@ -21,25 +21,32 @@ router.post("/", protect, async (req, res) => {
 
     const syllabusMatch = findRtuSubjectMatch({
       subjectName: name,
-      semester
+      branch
     })
 
     if (!syllabusMatch) {
+      const suggestions = getRtuSubjectSuggestions({
+        subjectName: name,
+        branch
+      })
+
       return res.status(400).json({
-        error: `Could not match "${name}" in RTU semester ${semester} syllabus. Use the official subject name.`
+        error: `Could not match "${name}" in RTU ${branch} syllabus. Use the official subject name.${suggestions.length ? ` Suggestions: ${suggestions.map((suggestion) => `${suggestion.courseName} (${suggestion.courseCode || "No code"}, Semester ${suggestion.semester})`).join(", ")}.` : ""}`,
+        suggestions
       })
     }
 
     const normalizedName = normalizeSubjectName(syllabusMatch.courseName)
     const existingSubject = await Subject.findOne({
       university: syllabusMatch.university,
+      branch: syllabusMatch.branch,
       semester: syllabusMatch.semester,
       normalizedName
     }).lean()
 
     if (existingSubject) {
       return res.status(409).json({
-        error: `${syllabusMatch.courseName} already exists for ${syllabusMatch.university} semester ${syllabusMatch.semester}.`
+        error: `${syllabusMatch.courseName} already exists for ${syllabusMatch.branch}, ${syllabusMatch.university} semester ${syllabusMatch.semester}.`
       })
     }
 
@@ -48,10 +55,12 @@ router.post("/", protect, async (req, res) => {
       normalizedName,
       level: "university",
       university: syllabusMatch.university,
+      branch: syllabusMatch.branch,
       semester: syllabusMatch.semester,
       courseCode: syllabusMatch.courseCode,
       syllabusSourceFile: syllabusMatch.syllabusSourceFile,
       syllabusContext: syllabusMatch.syllabusContext,
+      syllabusContent: syllabusMatch.syllabusContent,
       createdBy: {
         id: req.user._id,
         name: req.user.name
@@ -61,7 +70,7 @@ router.post("/", protect, async (req, res) => {
     res.status(201).json(subject)
 
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(err.statusCode || 500).json({ error: err.message, suggestions: err.suggestions || [] })
   }
 })
 

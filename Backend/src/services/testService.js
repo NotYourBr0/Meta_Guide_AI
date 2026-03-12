@@ -12,6 +12,7 @@ const QUESTION_COUNT = {
  */
 export const generate50QuestionsFromAI = async ({
   subjectName,
+  subjectBranch,
   subjectUniversity,
   subjectSemester,
   subjectCode,
@@ -27,6 +28,7 @@ export const generate50QuestionsFromAI = async ({
   const prompt = `You are a ${subjectName} quiz creator. Generate exactly 50 multiple-choice questions for the topic "${topicName}" (${topicLevel} level).
 
 Course context:
+- Branch: ${subjectBranch || "Unknown"}
 - University: ${subjectUniversity || "Unknown"}
 - Semester: ${subjectSemester || "Unknown"}
 - Course Code: ${subjectCode || "Unknown"}
@@ -47,6 +49,8 @@ Rules:
 - Treat the syllabus context as the official course boundary
 - Keep questions aligned with the RTU course scope, terminology, and unit coverage
 - Do not drift into outside topics unless they are clearly prerequisite knowledge for this syllabus
+- Use the official subject naming and branch context when phrasing questions
+- If the syllabus block implies lab work or practical experiments, some questions may assess that material, but do not invent experiments not present in the syllabus/explanation
 
 Return ONLY a valid JSON array of exactly 50 objects, no markdown, no extra text:
 [{"question":"...","options":["Option text A","Option text B","Option text C","Option text D","Option text E","Option text F"],"correctAnswers":[0],"explanation":"...","isMultiple":false}]
@@ -124,6 +128,7 @@ Generate all 50 questions now:`
 
 export const generateTestQuestionsFromAI = async ({
   subjectName,
+  subjectBranch,
   subjectUniversity,
   subjectSemester,
   subjectCode,
@@ -140,6 +145,7 @@ export const generateTestQuestionsFromAI = async ({
   const prompt = `You are a ${subjectName} quiz creator. Generate exactly ${count} multiple-choice questions for the topic "${topicName}" (${topicLevel} level).
 
 Course context:
+- Branch: ${subjectBranch || "Unknown"}
 - University: ${subjectUniversity || "Unknown"}
 - Semester: ${subjectSemester || "Unknown"}
 - Course Code: ${subjectCode || "Unknown"}
@@ -156,6 +162,7 @@ Rules:
 - Test understanding, not memorization
 - Keep explanations to 1 sentence
 - Stay within the syllabus boundary and course terminology
+- Do not introduce content outside the matched branch syllabus
 
 Return ONLY a valid JSON array, no markdown:
 [{"question":"...","options":["A","B","C","D","E","F"],"correctAnswers":[0],"explanation":"...","isMultiple":false}]

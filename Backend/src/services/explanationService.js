@@ -2,6 +2,7 @@ import fetch from "node-fetch"
 
 export const generateExplanationFromAI = async ({
   subjectName,
+  subjectBranch,
   subjectUniversity,
   subjectSemester,
   subjectCode,
@@ -14,9 +15,10 @@ export const generateExplanationFromAI = async ({
     ? syllabusContext.slice(0, 6000)
     : ""
 
-  const prompt =` Generate a structured, well-formatted explanation for the topic.
+  const prompt =`Generate a structured, syllabus-faithful explanation for the topic.
 
 Subject: ${subjectName}
+Branch: ${subjectBranch || "Unknown"}
 University: ${subjectUniversity || "Unknown"}
 Semester: ${subjectSemester || "Unknown"}
 Course Code: ${subjectCode || "Unknown"}
@@ -24,16 +26,17 @@ Topic: ${topicName}
 Difficulty: ${topicLevel}
 Language: ${language}
 
-You are an expert ${subjectName} educator.
+You are an expert ${subjectName} educator for RTU engineering students.
 
 SYLLABUS CONTEXT:
 ${trimmedSyllabusContext || "No syllabus context available."}
 
-Write a clear, complete, and well-organized explanation for "${topicName}" in ${subjectName}, adapted to the official course syllabus and difficulty.
+Write a clear, complete, and well-organized explanation for "${topicName}" in ${subjectName}, adapted to the official syllabus, branch, and difficulty.
 
 STRUCTURE RULES:
 
 Do NOT use a fixed template.
+Do NOT invent units, modules, experiments, formulas, or terminology that are not supported by the syllabus context or direct prerequisite knowledge.
 
 Dynamically design the section structure based on:
 
@@ -179,6 +182,9 @@ STRICT SYLLABUS ALIGNMENT:
 - Treat the syllabus context above as the course ground truth.
 - Keep the explanation aligned with the official course scope, terminology, and unit structure where relevant.
 - Do not drift into unrelated topics unless clearly marked as optional enrichment.
+- If the syllabus block includes lab work, experiments, design exercises, or practical applications relevant to the topic, include them in the explanation.
+- If a concept is outside the matched syllabus block, do not present it as part of the core explanation.
+- Prefer the exact course terminology and naming used in the syllabus when available.
 `
 
   const apiKey = process.env.EXPLANATION_API_KEY

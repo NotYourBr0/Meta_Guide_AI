@@ -2,6 +2,7 @@ import fetch from "node-fetch"
 
 export const generateSimulationFromAI = async ({
   subjectName,
+  subjectBranch,
   subjectUniversity,
   subjectSemester,
   subjectCode,
@@ -16,6 +17,7 @@ export const generateSimulationFromAI = async ({
   const prompt = `You are an expert educational simulation engineer. Build a serious, polished, single-file HTML5 simulation for one topic.
 
 Subject: ${subjectName || "Unknown"}
+Branch: ${subjectBranch || "Unknown"}
 University: ${subjectUniversity || "Unknown"}
 Semester: ${subjectSemester || "Unknown"}
 Course Code: ${subjectCode || "Unknown"}
@@ -32,6 +34,8 @@ GOAL:
 - Create one focused interactive simulation that teaches the core mechanism of "${topicName}".
 - Stay faithful to the provided explanation and syllabus context.
 - Do not generate a generic science-fair dashboard or random decorative widgets.
+- Every control, formula, output, unit, and label must be traceable to the explanation or syllabus context.
+- Do not introduce unknown variables, unexplained constants, fictional measurements, or outside concepts.
 
 OUTPUT RULES:
 - Return ONLY complete HTML.
@@ -82,10 +86,12 @@ VISUAL RULES:
 
 SIMULATION QUALITY RULES:
 - The simulation must reflect the actual topic logic from the reference explanation.
+- Restrict the simulation scope to the matched syllabus coverage for this subject.
 - Separate model/update logic from rendering logic.
 - If formulas are involved, show the currently computed outputs.
 - If motion or geometry is involved, animate it smoothly and keep it stable at different sizes.
 - If the topic is conceptual, build an interactive visualization instead of a static text page.
+- If the topic includes experiments or lab-style observations in the syllabus, prefer a controlled experiment-style simulation.
 
 ROBUSTNESS RULES:
 - Include CSS reset for box-sizing.
@@ -100,6 +106,7 @@ FINAL CHECK BEFORE OUTPUT:
 - Verify it is responsive.
 - Verify nothing overlaps or gets cut off on mobile or desktop.
 - Verify the simulation can be understood and used without layout breakage.
+- Verify every displayed value and concept is defined by the explanation or syllabus context.
 - Return only the final HTML.`
 
   const apiKey = process.env.SIMULATION_API_KEY

@@ -406,7 +406,7 @@ const TopicDetail = () => {
             title="Back to top"
             aria-label="Back to top"
           >
-            <span className="text-3xl font-black leading-none">⏏</span>
+            <span className="text-3xl font-white leading-none">⮝</span>
           </button>
         )}
       </div>

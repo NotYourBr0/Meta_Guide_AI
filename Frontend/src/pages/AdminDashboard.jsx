@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { RTU_BRANCH_OPTIONS } from "../constants/rtu"
 
 const API = import.meta.env.VITE_API_BASE_URL
-
-const normalizeSubjectName = (value = "") =>
-  value
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
 
 const AdminDashboard = () => {
   const { t } = useTranslation()
@@ -47,20 +40,6 @@ const AdminDashboard = () => {
   const updateSubject = async () => {
     try {
       setActionError(null)
-      const duplicateExists = data.subjects.some((subject) =>
-        subject._id !== editingSubject._id &&
-        (subject.university || "RTU") === (editingSubject.university || "RTU") &&
-        Number(subject.semester) === Number(editingSubject.semester) &&
-        normalizeSubjectName(subject.name) === normalizeSubjectName(editingSubject.name)
-      )
-
-      if (duplicateExists) {
-        setSnackbar(
-          `That subject already exists for ${(editingSubject.university || "RTU")} semester ${editingSubject.semester}.`
-        )
-        return
-      }
-
       const res = await fetch(`${API}/api/admin/subject/${editingSubject._id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
@@ -68,7 +47,7 @@ const AdminDashboard = () => {
         body: JSON.stringify({
           name: editingSubject.name,
           university: editingSubject.university,
-          semester: Number(editingSubject.semester)
+          branch: editingSubject.branch
         })
       })
       const result = await res.json()
@@ -235,18 +214,18 @@ const AdminDashboard = () => {
                     </select>
                     <select
                       className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-600"
-                      value={editingSubject.semester || 1}
-                      onChange={e => setEditingSubject({ ...editingSubject, semester: Number(e.target.value) })}
+                      value={editingSubject.branch || "Computer Science & Engineering"}
+                      onChange={e => setEditingSubject({ ...editingSubject, branch: e.target.value })}
                     >
-                      <option value="1">Semester 1</option>
-                      <option value="2">Semester 2</option>
-                      <option value="3">Semester 3</option>
-                      <option value="4">Semester 4</option>
-                      <option value="5">Semester 5</option>
-                      <option value="6">Semester 6</option>
-                      <option value="7">Semester 7</option>
-                      <option value="8">Semester 8</option>
+                      {RTU_BRANCH_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
                     </select>
+                    <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+                      Semester will be inferred automatically from the matched syllabus.
+                    </div>
                     <div className="flex gap-2 justify-end mt-2">
                       <button 
                         onClick={() => setEditingSubject(null)}
@@ -267,7 +246,7 @@ const AdminDashboard = () => {
                     <div>
                       <div className="font-medium text-gray-800 dark:text-gray-200">{s.name}</div>
                       <div className="text-xs text-gray-500 uppercase tracking-wide mt-1">
-                        {(s.university || "RTU")} | Semester {s.semester || "?"}
+                        {(s.university || "RTU")} | {s.branch || "Unknown Branch"} | Semester {s.semester || "?"}
                       </div>
                       {s.courseCode && (
                         <div className="text-xs text-gray-400 mt-1">{s.courseCode}</div>

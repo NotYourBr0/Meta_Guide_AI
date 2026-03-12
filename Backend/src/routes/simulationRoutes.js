@@ -42,10 +42,11 @@ router.post("/generate-ai/:topicId", protect, async (req, res) => {
     await generateTopicSimulation({
       topicId,
       subjectName: subject.name,
+      subjectBranch: subject.branch,
       subjectUniversity: subject.university,
       subjectSemester: subject.semester,
       subjectCode: subject.courseCode,
-      syllabusContext: subject.syllabusContext,
+      syllabusContext: subject.syllabusContent || subject.syllabusContext,
       topicName: topic.name,
       topicLevel: topic.level,
       explanation: topic.explanation,

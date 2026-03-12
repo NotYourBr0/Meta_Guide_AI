@@ -3,15 +3,8 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useTranslation } from "react-i18next"
 import AddSubjectModal from "../components/ui/AddSubjectModal"
+import { SEMESTER_OPTIONS } from "../constants/rtu"
 import { getSubjects, createSubject } from "../services/api"
-
-const normalizeSubjectName = (value = "") =>
-  value
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
 
 const Subjects = () => {
   const navigate = useNavigate()
@@ -45,25 +38,12 @@ const Subjects = () => {
     return () => clearTimeout(timeoutId)
   }, [snackbar])
 
-  const handleAddSubject = async ({ name, university, semester }) => {
+  const handleAddSubject = async ({ name, university, branch }) => {
     setError(null)
     setSubmitting(true)
     
     try {
-      const normalizedName = normalizeSubjectName(name)
-      const duplicateExists = subjects.some((subject) =>
-        (subject.university || "") === university &&
-        Number(subject.semester) === Number(semester) &&
-        normalizeSubjectName(subject.name) === normalizedName
-      )
-
-      if (duplicateExists) {
-        setSnackbar(`That subject already exists for ${university} semester ${semester}.`)
-        setSubmitting(false)
-        return
-      }
-
-      const newSubject = await createSubject({ name, university, semester })
+      const newSubject = await createSubject({ name, university, branch })
       setSubjects(prev => [newSubject, ...prev])
       setShowModal(false)
     } catch (err) {
@@ -89,7 +69,8 @@ const Subjects = () => {
         subject.name.toLowerCase().includes(search.toLowerCase()) ||
         (subject.createdBy?.name || "").toLowerCase().includes(search.toLowerCase()) ||
         `${subject.university || ""}`.toLowerCase().includes(search.toLowerCase()) ||
-        `${subject.courseCode || ""}`.toLowerCase().includes(search.toLowerCase())
+        `${subject.courseCode || ""}`.toLowerCase().includes(search.toLowerCase()) ||
+        `${subject.branch || ""}`.toLowerCase().includes(search.toLowerCase())
 
       return matchesUniversity && matchesSemester && matchesSearch
     })
@@ -111,7 +92,7 @@ const Subjects = () => {
         </div>
       )}
       
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <button
           onClick={() => setShowModal(true)}
           disabled={!user}
@@ -120,7 +101,7 @@ const Subjects = () => {
           {t("subjects.addSubject")}
         </button>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <select
             value={filterUniversity}
             onChange={(e) => setFilterUniversity(e.target.value)}
@@ -136,14 +117,11 @@ const Subjects = () => {
             className="border p-2 dark:bg-gray-800"
           >
             <option value="all">All Semesters</option>
-            <option value="1">Semester 1</option>
-            <option value="2">Semester 2</option>
-            <option value="3">Semester 3</option>
-            <option value="4">Semester 4</option>
-            <option value="5">Semester 5</option>
-            <option value="6">Semester 6</option>
-            <option value="7">Semester 7</option>
-            <option value="8">Semester 8</option>
+            {SEMESTER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
 
           <input
@@ -156,23 +134,31 @@ const Subjects = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {filteredSubjects.map(subject => (
           <div
             key={subject._id}
             onClick={() =>
               navigate(`/subjects/${subject._id}`, { state: subject })
             }
-            className="border p-4 rounded hover:border-primary cursor-pointer"
+            className="cursor-pointer rounded-2xl border p-4 transition hover:border-primary"
           >
-            <div className="text-sm text-accent mb-2">
+            <div className="mb-3 text-sm text-accent">
               {subject.createdBy?.name || t("subjects.unknown")}
             </div>
-            <h3 className="text-lg">{subject.name}</h3>
-            <p className="text-sm opacity-70 mt-1">{subject.university || "RTU"} | Semester {subject.semester || "?"}</p>
-            {subject.courseCode && (
-              <p className="text-xs opacity-60 mt-1">{subject.courseCode}</p>
-            )}
+
+            <h3 className="text-lg font-semibold">{subject.name}</h3>
+            <p className="mt-2 text-sm opacity-70">
+              {(subject.university || "RTU")} | {subject.branch || "Unknown Branch"}
+            </p>
+            <p className="mt-1 text-sm opacity-70">Semester {subject.semester || "?"}</p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              {subject.courseCode && (
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  {subject.courseCode}
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -39,6 +39,19 @@ const updateTopicFields = async (topicId, fields) => {
   await Topic.findByIdAndUpdate(topicId, { $set: fields })
 }
 
+const getSubjectPromptContext = (subject) => {
+  const syllabusText = subject?.syllabusContent || subject?.syllabusContext || ""
+
+  return {
+    subjectName: subject?.name,
+    subjectBranch: subject?.branch || "Computer Science & Engineering",
+    subjectUniversity: subject?.university,
+    subjectSemester: subject?.semester,
+    subjectCode: subject?.courseCode,
+    syllabusContext: syllabusText
+  }
+}
+
 const validateSimulationHtml = (htmlContent) => {
   if (
     !htmlContent ||
@@ -129,11 +142,7 @@ export const generateTopicExplanation = async (topicId) => {
 
   try {
     const explanation = await generateExplanationFromAI({
-      subjectName: subject.name,
-      subjectUniversity: subject.university,
-      subjectSemester: subject.semester,
-      subjectCode: subject.courseCode,
-      syllabusContext: subject.syllabusContext,
+      ...getSubjectPromptContext(subject),
       topicName: topic.name,
       topicLevel: topic.level,
       language: "English"
@@ -293,27 +302,20 @@ export const generateTopicAssets = async (topicId) => {
   }
 
   const { topic: freshTopic, subject, explanation } = explanationResult
+  const subjectPromptContext = getSubjectPromptContext(subject)
 
   await Promise.allSettled([
     generateTopicTranslation(topicId, explanation),
     generateTopicQuestionBank({
       topicId,
-      subjectName: subject.name,
-      subjectUniversity: subject.university,
-      subjectSemester: subject.semester,
-      subjectCode: subject.courseCode,
-      syllabusContext: subject.syllabusContext,
+      ...subjectPromptContext,
       topicName: freshTopic.name,
       topicLevel: freshTopic.level,
       explanation
     }),
     generateTopicSimulation({
       topicId,
-      subjectName: subject.name,
-      subjectUniversity: subject.university,
-      subjectSemester: subject.semester,
-      subjectCode: subject.courseCode,
-      syllabusContext: subject.syllabusContext,
+      ...subjectPromptContext,
       topicName: freshTopic.name,
       topicLevel: freshTopic.level,
       explanation
