@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import "katex/dist/katex.min.css"
 import ReactMarkdown from "react-markdown"
+import rehypeKatex from "rehype-katex"
+import remarkMath from "remark-math"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useParams } from "react-router-dom"
 import SimpleSpinner from "../components/ui/SimpleSpinner"
@@ -326,7 +329,9 @@ const TopicDetail = () => {
 
         {explanation && !explanationLoading && (
           <div className="prose max-w-none dark:prose-invert">
-            <ReactMarkdown>{displayedExplanation}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {displayedExplanation}
+            </ReactMarkdown>
           </div>
         )}
       </div>

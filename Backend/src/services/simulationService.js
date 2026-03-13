@@ -1,5 +1,131 @@
 import fetch from "node-fetch"
 
+const SIMULATION_MODEL = "gemini-3-flash-preview"
+const SIMULATION_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+const SIMULATION_MAX_OUTPUT_TOKENS = 8192
+const simulationKeyLoad = new Map()
+let simulationKeyCursor = 0
+
+const parseSimulationApiKeys = () => {
+  const rawValue = process.env.SIMULATION_API_KEY || ""
+  const keys = rawValue
+    .split(/[,\r\n]+/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(keys))
+}
+
+const getSimulationApiKeys = () => {
+  const keys = parseSimulationApiKeys()
+
+  if (!keys.length) {
+    throw new Error("SIMULATION_API_KEY is not configured on the server")
+  }
+
+  keys.forEach((key) => {
+    if (!simulationKeyLoad.has(key)) {
+      simulationKeyLoad.set(key, 0)
+    }
+  })
+
+  Array.from(simulationKeyLoad.keys()).forEach((key) => {
+    if (!keys.includes(key)) {
+      simulationKeyLoad.delete(key)
+    }
+  })
+
+  return keys
+}
+
+const acquireSimulationApiKey = (excludedKeys = new Set()) => {
+  const keys = getSimulationApiKeys()
+  const candidateKeys = keys.filter((key) => !excludedKeys.has(key))
+
+  if (!candidateKeys.length) {
+    return null
+  }
+
+  let selectedKey = candidateKeys[0]
+  let selectedLoad = Number.POSITIVE_INFINITY
+
+  for (let offset = 0; offset < candidateKeys.length; offset += 1) {
+    const key = candidateKeys[(simulationKeyCursor + offset) % candidateKeys.length]
+    const activeLoad = simulationKeyLoad.get(key) || 0
+
+    if (activeLoad < selectedLoad) {
+      selectedKey = key
+      selectedLoad = activeLoad
+    }
+  }
+
+  simulationKeyCursor = (candidateKeys.indexOf(selectedKey) + 1) % candidateKeys.length
+  simulationKeyLoad.set(selectedKey, (simulationKeyLoad.get(selectedKey) || 0) + 1)
+
+  return {
+    key: selectedKey,
+    release: () => {
+      const nextLoad = Math.max((simulationKeyLoad.get(selectedKey) || 1) - 1, 0)
+      simulationKeyLoad.set(selectedKey, nextLoad)
+    }
+  }
+}
+
+const isRateLimitedResponse = (status, bodyText = "") => {
+  const normalizedBody = bodyText.toLowerCase()
+
+  return (
+    status === 429 ||
+    status === 503 ||
+    normalizedBody.includes("rate limit") ||
+    normalizedBody.includes("resource_exhausted") ||
+    normalizedBody.includes("quota") ||
+    normalizedBody.includes("too many requests")
+  )
+}
+
+const requestSimulationHtml = async ({ prompt, apiKey }) => {
+  const apiUrl = `${SIMULATION_BASE_URL}/${SIMULATION_MODEL}:generateContent?key=${apiKey}`
+
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.9,
+        maxOutputTokens: SIMULATION_MAX_OUTPUT_TOKENS
+      }
+    })
+  })
+
+  const responseText = await response.text()
+
+  if (!response.ok) {
+    const error = new Error(`AI API Error: ${response.status} - ${responseText}`)
+    error.statusCode = response.status
+    error.responseText = responseText
+    error.isRateLimited = isRateLimitedResponse(response.status, responseText)
+    throw error
+  }
+
+  const data = JSON.parse(responseText)
+  const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!generatedText) {
+    throw new Error("No content generated from AI")
+  }
+
+  return generatedText
+}
+
 export const generateSimulationFromAI = async ({
   subjectName,
   subjectBranch,
@@ -109,42 +235,38 @@ FINAL CHECK BEFORE OUTPUT:
 - Verify every displayed value and concept is defined by the explanation or syllabus context.
 - Return only the final HTML.`
 
-  const apiKey = process.env.SIMULATION_API_KEY
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`
+  const exhaustedKeys = new Set()
+  const totalKeys = getSimulationApiKeys().length
+  let lastError = null
 
-  const response = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.9,
-        maxOutputTokens: 8192
+  while (exhaustedKeys.size < totalKeys) {
+    const lease = acquireSimulationApiKey(exhaustedKeys)
+
+    if (!lease) {
+      break
+    }
+
+    const { key, release } = lease
+
+    try {
+      return await requestSimulationHtml({ prompt, apiKey: key })
+    } catch (error) {
+      lastError = error
+
+      if (error.isRateLimited) {
+        exhaustedKeys.add(key)
+        continue
       }
-    })
-  })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`AI API Error: ${response.status} - ${errorText}`)
+      throw error
+    } finally {
+      release()
+    }
   }
 
-  const data = await response.json()
-
-  // Extract text from Gemini API response
-  const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text
-  
-  if (!generatedText) {
-    throw new Error("No content generated from AI")
+  if (lastError) {
+    throw lastError
   }
 
-  return generatedText
+  throw new Error("No simulation API key is available")
 }
-    

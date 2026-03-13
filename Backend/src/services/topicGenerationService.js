@@ -179,6 +179,7 @@ export const generateTopicTranslation = async (topicId, explanation) => {
 export const generateTopicQuestionBank = async ({
   topicId,
   subjectName,
+  subjectBranch,
   subjectUniversity,
   subjectSemester,
   subjectCode,
@@ -194,11 +195,16 @@ export const generateTopicQuestionBank = async ({
     return existingBank.questions
   }
 
+  if (!explanation || !explanation.trim()) {
+    throw new Error("Explanation required before generating question bank")
+  }
+
   await setTopicGenerationStatus(topicId, "questionBank", STATUS.PROCESSING)
 
   try {
     const questions = await generate50QuestionsFromAI({
       subjectName,
+      subjectBranch,
       subjectUniversity,
       subjectSemester,
       subjectCode,

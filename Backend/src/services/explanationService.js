@@ -1,5 +1,9 @@
 import fetch from "node-fetch"
 
+const EXPLANATION_BASE_URL = "https://api.groq.com/openai/v1"
+const EXPLANATION_MODEL = "openai/gpt-oss-120b"
+const EXPLANATION_MAX_TOKENS = 8000
+
 export const generateExplanationFromAI = async ({
   subjectName,
   subjectBranch,
@@ -37,6 +41,9 @@ STRUCTURE RULES:
 
 Do NOT use a fixed template.
 Do NOT invent units, modules, experiments, formulas, or terminology that are not supported by the syllabus context or direct prerequisite knowledge.
+Difficulty level controls content length and coverage depth, not language complexity.
+Keep the language easy, direct, and student-friendly at every level.
+Do not make advanced explanations sound academically inflated or unnecessarily technical.
 
 Dynamically design the section structure based on:
 
@@ -76,49 +83,39 @@ Do NOT merge everything into one block.
 
 CONTENT GUIDELINES:
 
-Adjust structure and depth automatically:
+Adjust structure and depth automatically, but keep the language easy and readable:
 
 For Beginner Level:
 
-Simple overview
+Use a normal full explanation in very easy language
 
-Basic concepts
+Explain every idea in the simplest clear form
 
-Examples
+Use friendly examples from study or daily life where relevant
 
-Visual or intuitive explanations
+Define technical terms immediately in plain words
 
-Simple practice questions
+Keep this as the baseline explanation length
 
 For Intermediate Level:
 
-Deeper explanations
+Keep the same easy language as beginner level
 
-Formulas
+Make the content about 30% longer than beginner level
 
-Step-by-step methods
+Add a little more detail, more examples, and more applications
 
-Applications
-
-Common mistakes
-
-Practice problems
+Expand steps, common mistakes, and practice questions without increasing wording difficulty
 
 For Advanced Level:
 
-Theoretical background
+Keep the same easy, student-friendly language
 
-Derivations
+Make the content about 60% longer than beginner level
 
-Advanced models
+Add broader coverage, more worked reasoning, more edge cases, and more practice
 
-Edge cases
-
-Proofs or reasoning
-
-Complex examples
-
-Challenging exercises
+Do not use difficult wording just because the level is advanced
 
 MANDATORY ELEMENTS (adapt quantity and depth to level):
 
@@ -173,6 +170,9 @@ No unnecessary filler.
 Match depth to: ${topicLevel}.
 
 Maintain professional and engaging style.
+Use short sentences and simple wording.
+If a textbook or exam definition is important, write the accurate definition first and then explain it in easy words immediately after.
+Do not replace proper technical definitions with vague casual language.
 
 OUTPUT GOAL:
 
@@ -185,27 +185,37 @@ STRICT SYLLABUS ALIGNMENT:
 - If the syllabus block includes lab work, experiments, design exercises, or practical applications relevant to the topic, include them in the explanation.
 - If a concept is outside the matched syllabus block, do not present it as part of the core explanation.
 - Prefer the exact course terminology and naming used in the syllabus when available.
+- When formulas are needed, format inline formulas as $...$ and important formulas as $$...$$ using readable LaTeX.
+- After each important formula, define every symbol in simple bullet points.
+- Keep formulas readable and never dump raw ASCII-style expressions when proper LaTeX can express them clearly.
 `
 
   const apiKey = process.env.EXPLANATION_API_KEY
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`
+  if (!apiKey) {
+    throw new Error("EXPLANATION_API_KEY is not configured on the server")
+  }
 
-  const response = await fetch(apiUrl, {
+  const response = await fetch(`${EXPLANATION_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: prompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.5,
-        topP: 0.9,
-        maxOutputTokens: 4096
-      }
+      model: EXPLANATION_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "You generate syllabus-faithful engineering explanations in clean GitHub-Flavored Markdown."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.5,
+      top_p: 0.9,
+      max_tokens: EXPLANATION_MAX_TOKENS
     })
   })
 
@@ -215,10 +225,8 @@ STRICT SYLLABUS ALIGNMENT:
   }
 
   const data = await response.json()
+  const generatedText = data.choices?.[0]?.message?.content?.trim()
 
-  // Extract text from Gemini API response
-  const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text
-  
   if (!generatedText) {
     throw new Error("No content generated from AI")
   }

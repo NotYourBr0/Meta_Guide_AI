@@ -130,6 +130,7 @@ router.post("/generate-bank/:topicId", protect, async (req, res) => {
 
     const subject = await Subject.findById(topic.subjectId)
     if (!subject) return res.status(404).json({ error: "Subject not found" })
+    if (!topic.explanation) return res.status(400).json({ error: "Explanation required before generating question bank" })
 
     const questions = await generateTopicQuestionBank({
       topicId,
