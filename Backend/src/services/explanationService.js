@@ -1,6 +1,5 @@
-import fetch from "node-fetch"
+import { generateGroqTextWithFailover } from "./groqKeyPool.js"
 
-const EXPLANATION_BASE_URL = "https://api.groq.com/openai/v1"
 const EXPLANATION_MODEL = "openai/gpt-oss-120b"
 const EXPLANATION_MAX_TOKENS = 8000
 
@@ -19,7 +18,7 @@ export const generateExplanationFromAI = async ({
     ? syllabusContext.slice(0, 6000)
     : ""
 
-  const prompt =`Generate a structured, syllabus-faithful explanation for the topic.
+  const prompt = `Generate a structured, syllabus-faithful explanation for the topic.
 
 Subject: ${subjectName}
 Branch: ${subjectBranch || "Unknown"}
@@ -190,46 +189,13 @@ STRICT SYLLABUS ALIGNMENT:
 - Keep formulas readable and never dump raw ASCII-style expressions when proper LaTeX can express them clearly.
 `
 
-  const apiKey = process.env.EXPLANATION_API_KEY
-  if (!apiKey) {
-    throw new Error("EXPLANATION_API_KEY is not configured on the server")
-  }
-
-  const response = await fetch(`${EXPLANATION_BASE_URL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: EXPLANATION_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "You generate syllabus-faithful engineering explanations in clean GitHub-Flavored Markdown."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.5,
-      top_p: 0.9,
-      max_tokens: EXPLANATION_MAX_TOKENS
-    })
+  return generateGroqTextWithFailover({
+    envVarName: "EXPLANATION_API_KEY",
+    model: EXPLANATION_MODEL,
+    maxTokens: EXPLANATION_MAX_TOKENS,
+    temperature: 0.5,
+    topP: 0.9,
+    systemPrompt: "You generate syllabus-faithful engineering explanations in clean GitHub-Flavored Markdown.",
+    userPrompt: prompt
   })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`AI API Error: ${response.status} - ${errorText}`)
-  }
-
-  const data = await response.json()
-  const generatedText = data.choices?.[0]?.message?.content?.trim()
-
-  if (!generatedText) {
-    throw new Error("No content generated from AI")
-  }
-
-  return generatedText
 }

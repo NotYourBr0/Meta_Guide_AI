@@ -3,7 +3,7 @@ import Subject from "../models/Subject.js"
 import Topic from "../models/Topic.js"
 import { generateExplanationFromAI } from "./explanationService.js"
 import { generateSimulationFromAI } from "./simulationService.js"
-import { generate50QuestionsFromAI } from "./testService.js"
+import { generateQuestionBankFromAI } from "./testService.js"
 import { translateToHindi } from "./translationService.js"
 
 const STATUS = {
@@ -202,7 +202,7 @@ export const generateTopicQuestionBank = async ({
   await setTopicGenerationStatus(topicId, "questionBank", STATUS.PROCESSING)
 
   try {
-    const questions = await generate50QuestionsFromAI({
+    const questions = await generateQuestionBankFromAI({
       subjectName,
       subjectBranch,
       subjectUniversity,
