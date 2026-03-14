@@ -10,7 +10,7 @@ const QUESTION_BANK_TARGET = 20
 const QUESTION_BANK_BATCH_SIZE = 3
 const QUESTION_BANK_MAX_ATTEMPTS = 40
 const PRIMARY_TEST_MODEL = "llama-3.1-8b-instant"
-const FALLBACK_TEST_MODELS = []
+const FALLBACK_TEST_MODELS = ["openai/gpt-oss-20b"]
 const TEST_MAX_TOKENS = 3000
 
 const sanitizeJsonText = (value = "") =>
