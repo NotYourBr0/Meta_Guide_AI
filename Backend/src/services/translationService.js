@@ -5,7 +5,7 @@ const TRANSLATION_MAX_TOKENS = 8000
 
 export const translateToHindi = async (englishText) => {
   const prompt = `
-Translate the following English explanation to Hindi. Maintain the exact same markdown formatting, structure, headings, spacing, and formula formatting.
+Translate the following English explanation to Hinglish. Maintain the exact same markdown formatting, structure, headings, spacing, and formula formatting.
 
 English Text:
 ${englishText}
@@ -17,7 +17,7 @@ IMPORTANT:
 - Translate only the human-readable text content
 - Do not translate markdown symbols or LaTeX syntax
 - Do not add any additional explanations or notes
-- Output only the translated Hindi text with the original markdown formatting
+- Output only the translated Hinglish text with the original markdown formatting
 `
 
   return generateGroqTextWithFailover({
@@ -26,7 +26,7 @@ IMPORTANT:
     maxTokens: TRANSLATION_MAX_TOKENS,
     temperature: 0.3,
     topP: 0.9,
-    systemPrompt: "You translate engineering explanations to Hindi while preserving markdown structure and LaTeX formulas exactly.",
+    systemPrompt: "You translate engineering explanations to Hinglish while preserving markdown structure and LaTeX formulas exactly.",
     userPrompt: prompt
   })
 }
