@@ -33,7 +33,7 @@ const LanguageSwitcher = () => {
             : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
         }`}
       >
-        HI
+        HING
       </button>
     </div>
   )

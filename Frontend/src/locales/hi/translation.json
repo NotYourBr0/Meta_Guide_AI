@@ -1,62 +1,62 @@
 {
   "navbar": {
-    "profile": "प्रोफ़ाइल"
+    "profile": "Profile"
   },
   "sidebar": {
-    "home": "होम",
-    "subjects": "विषय",
-    "tests": "टेस्ट",
-    "leaderboard": "लीडरबोर्ड"
+    "home": "Home",
+    "subjects": "Vishay",
+    "tests": "Test",
+    "leaderboard": "Leaderboard"
   },
   "tests": {
     "header": {
-      "title": "टेस्ट",
-      "subtitle": "हर टॉपिक के लिए AI-जनित क्विज़। नया टेस्ट शुरू करने के लिए किसी टॉपिक पर क्लिक करें।"
+      "title": "Test",
+      "subtitle": "Har topic ke liye AI-generated quiz. Naya test shuru karne ke liye kisi topic par click karein."
     },
     "search": {
-      "placeholder": "टॉपिक, विषय या निर्माता द्वारा खोजें...",
+      "placeholder": "Topic, vishay ya creator dwara search karein...",
       "levels": {
-        "all": "सभी स्तर",
-        "beginner": "शुरुआती",
-        "intermediate": "मध्यम",
-        "advanced": "उन्नत"
+        "all": "Sabhi level",
+        "beginner": "Shuruaati",
+        "intermediate": "Madhyam",
+        "advanced": "Unnat"
       }
     },
     "stats": {
-      "topics": "{{count}} टॉपिक",
-      "topics_plural": "{{count}} टॉपिक",
-      "attempted": "• {{count}} प्रयास किए गए"
+      "topics": "{{count}} topic",
+      "topics_plural": "{{count}} topic",
+      "attempted": "• {{count}} attempt kiye gaye"
     },
     "empty": {
-      "title": "कोई टॉपिक नहीं मिला",
-      "subtitle": "अपनी खोज या फ़िल्टर को समायोजित करने का प्रयास करें"
+      "title": "Koi topic nahi mila",
+      "subtitle": "Apni search ya filter ko adjust karne ka prayas karein"
     },
     "card": {
-      "ranks": "रैंक",
-      "bestScore": "सर्वोत्तम स्कोर",
-      "questions": "{{count}} प्रश्न",
-      "pts": "{{count}} अंक",
-      "loginToStart": "शुरू करने के लिए लॉगिन करें",
-      "generating": "उत्पन्न हो रहा है...",
-      "retry": "पुनः प्रयास करें →",
-      "start": "शुरू करें →",
-      "noExplanation": "⚠️ अभी कोई व्याख्या नहीं — टेस्ट सामान्य हो सकता है"
+      "ranks": "Rank",
+      "bestScore": "Sarvottam score",
+      "questions": "{{count}} prashn",
+      "pts": "{{count}} ank",
+      "loginToStart": "Shuru karne ke liye login karein",
+      "generating": "Generate ho raha hai...",
+      "retry": "Dobara prayas karein →",
+      "start": "Shuru karein →",
+      "noExplanation": "⚠️ Abhi koi explanation nahi — test normal ho sakta hai"
     },
-    "loading": "टेस्ट लोड हो रहे हैं...",
-    "error": "त्रुटि: {{message}}",
-    "unknownCreator": "अज्ञात"
+    "loading": "Test load ho rahe hain...",
+    "error": "Error: {{message}}",
+    "unknownCreator": "Agyat"
   },
   "home": {
-    "welcome": "स्वागत है, {{name}}"
+    "welcome": "Swagat hai, {{name}}"
   },
   "topic": {
-    "explanation": "व्याख्या",
-    "generateExplanation": "व्याख्या उत्पन्न करें",
-    "generating": "उत्पन्न हो रहा है...",
-    "english": "अंग्रेज़ी",
-    "hindi": "हिंदी",
-    "simulation": "सिमुलेशन",
-    "generateSimulation": "सिमुलेशन उत्पन्न करें",
-    "fullscreen": "पूर्ण स्क्रीन"
+    "explanation": "Explanation",
+    "generateExplanation": "Explanation generate karein",
+    "generating": "Generate ho raha hai...",
+    "english": "English",
+    "hindi": "Hindi",
+    "simulation": "Simulation",
+    "generateSimulation": "Simulation generate karein",
+    "fullscreen": "Full screen"
   }
 }
